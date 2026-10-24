@@ -70,11 +70,9 @@ reload ownership, toast placement, the lazy messaging chunk, and the e2e static 
    upload to Drive per `docs/submission-index.md`.
 
 **Exact owner action needed:**
-- Leftover processes from this session that are safe to stop (it was not permitted to stop them):
-  Java PIDs 18096 (ports 8080/9150) and 18228 (8085/9151), the emulators from early runs; and the
-  test servers from an interrupted run, node PID 19884 (emulator hub, Auth 9099, UI 4000) with
-  Java PID 10964 (Firestore 8086/9152), and node PID 6560 (static server 4173). Later test runs
-  reuse the last group.
+- Two leftover Java processes from this session's earliest emulator runs (before the Windows fix)
+  are safe to stop; this session was not permitted to stop them: PID 18096 (ports 8080/9150) and
+  PID 18228 (ports 8085/9151). The project uses port 8086, so they do not block anything.
 - Provide Firebase project access (Auth email/password, Firestore, Cloud Messaging, a Web app and a
   VAPID key) and decide whether deployment to Firebase Hosting is authorized.
 - Create a GitHub repository and authorize pushing to it, if wanted.

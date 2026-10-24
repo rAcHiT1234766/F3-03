@@ -137,5 +137,4 @@ load "around 1 second" was met (0.18 s). Both are on this machine with emulators
 - Not verified yet: real Firebase project, HTTPS deployment, installation, real push, Firefox and
   Safari, OS-level disconnection, manual screen-reader pass.
 - Two Firestore-emulator JVMs from early runs (before the fix in `scripts/firebase-emulators.mjs`)
-  and the test servers from one interrupted test run were still running when this was written;
-  see `docs/progress.md`.
+  were still running when this was written; see `docs/progress.md`.
