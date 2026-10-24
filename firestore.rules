@@ -1,0 +1,172 @@
+rules_version = '2';
+
+// FieldLog access policy. Every path is owner-only. Rules validate structure and link each
+// canonical job mutation to the immutable receipt written in the same transaction. The merge
+// decision itself runs in the owner's client transaction (single-owner app; see docs).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isUuid(s) {
+      return s is string
+        && s.matches('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$');
+    }
+
+    function fieldKeys() {
+      return ['title', 'customerName', 'siteAddress', 'description', 'notes', 'status', 'priority', 'dueDate'];
+    }
+
+    function textOk(s, min, max) {
+      return s is string && s.size() >= min && s.size() <= max;
+    }
+
+    function validFields(f) {
+      return f is map
+        && f.keys().hasAll(fieldKeys()) && f.keys().hasOnly(fieldKeys())
+        && textOk(f.title, 1, 120)
+        && textOk(f.customerName, 1, 120)
+        && textOk(f.siteAddress, 0, 300)
+        && textOk(f.description, 0, 2000)
+        && textOk(f.notes, 0, 4000)
+        && f.status in ['scheduled', 'in_progress', 'completed']
+        && f.priority in ['low', 'normal', 'high']
+        // Full Gregorian validation (e.g. no 31 February) happens in the client.
+        && (f.dueDate == null
+            || (f.dueDate is string
+                && f.dueDate.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')));
+    }
+
+    function jobKeys() {
+      return ['schemaVersion', 'id', 'ownerId', 'fields', 'deleted', 'revision', 'lastOpId', 'updatedAt'];
+    }
+
+    function validJob(uid, jobId, d) {
+      return d.keys().hasAll(jobKeys()) && d.keys().hasOnly(jobKeys())
+        && d.schemaVersion == 1
+        && d.id == jobId
+        && d.ownerId == uid
+        && validFields(d.fields)
+        && d.deleted is bool
+        && d.revision is int
+        && isUuid(d.lastOpId)
+        && d.updatedAt == request.time;
+    }
+
+    function jobPath(uid, jobId) {
+      return /databases/$(database)/documents/users/$(uid)/jobs/$(jobId);
+    }
+
+    function receiptPath(uid, opId) {
+      return /databases/$(database)/documents/users/$(uid)/operations/$(opId);
+    }
+
+    // The job's new lastOpId must be a receipt created in this same atomic write, recording
+    // an applied change that produced exactly this revision.
+    function linkedToNewReceipt(uid, jobId, d) {
+      let receipt = getAfter(receiptPath(uid, d.lastOpId));
+      return !exists(receiptPath(uid, d.lastOpId))
+        && receipt != null
+        && receipt.data.jobId == jobId
+        && receipt.data.outcome == 'applied'
+        && receipt.data.result.revision == d.revision;
+    }
+
+    match /users/{uid}/jobs/{jobId} {
+      allow read: if isOwner(uid);
+
+      allow create: if isOwner(uid)
+        && isUuid(jobId)
+        && validJob(uid, jobId, request.resource.data)
+        && request.resource.data.revision == 1
+        && request.resource.data.deleted == false
+        && linkedToNewReceipt(uid, jobId, request.resource.data);
+
+      // Tombstones are terminal: a deleted job never changes again. A delete keeps the fields.
+      allow update: if isOwner(uid)
+        && resource.data.deleted == false
+        && validJob(uid, jobId, request.resource.data)
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.lastOpId != resource.data.lastOpId
+        && (request.resource.data.deleted == false
+            || request.resource.data.fields == resource.data.fields)
+        && linkedToNewReceipt(uid, jobId, request.resource.data);
+
+      // Deletion is a tombstone update; physical deletes are never allowed.
+      allow delete: if false;
+    }
+
+    function receiptKeys() {
+      return ['protocolVersion', 'opId', 'ownerId', 'deviceId', 'jobId', 'kind', 'outcome',
+              'request', 'result', 'conflicts', 'receivedAt'];
+    }
+
+    function validReceipt(uid, opId, r) {
+      return r.keys().hasAll(receiptKeys()) && r.keys().hasOnly(receiptKeys())
+        && r.protocolVersion == 1
+        && r.opId == opId
+        && r.ownerId == uid
+        && textOk(r.deviceId, 1, 64)
+        && isUuid(r.jobId)
+        && r.kind in ['create', 'patch', 'delete']
+        && r.outcome in ['applied', 'noop', 'rejected_deleted']
+        && !(r.kind == 'create' && r.outcome != 'applied')
+        && r.request is map
+        && r.request.protocolVersion == 1
+        && r.request.opId == opId
+        && r.request.ownerId == uid
+        && r.request.jobId == r.jobId
+        && r.request.kind == r.kind
+        && r.result is map
+        && r.result.id == r.jobId
+        && r.conflicts is list && r.conflicts.size() <= 8
+        && r.receivedAt == request.time;
+    }
+
+    match /users/{uid}/operations/{opId} {
+      allow read: if isOwner(uid);
+
+      allow create: if isOwner(uid)
+        && isUuid(opId)
+        && validReceipt(uid, opId, request.resource.data)
+        && receiptMatchesJob(uid, request.resource.data);
+
+      // Receipts are immutable idempotency records, retained for the project's lifetime.
+      allow update, delete: if false;
+    }
+
+    // An applied receipt must describe the job as written in this transaction. A noop or
+    // rejected_deleted receipt references an existing job that this write leaves unchanged.
+    function receiptMatchesJob(uid, r) {
+      let after = getAfter(jobPath(uid, r.jobId));
+      return after != null && (
+        (r.outcome == 'applied'
+          && after.data.lastOpId == r.opId
+          && after.data.revision == r.result.revision
+          && after.data.fields == r.result.fields
+          && after.data.deleted == r.result.deleted)
+        || (r.outcome != 'applied'
+          && exists(jobPath(uid, r.jobId))
+          && get(jobPath(uid, r.jobId)).data == after.data
+          && after.data.revision == r.result.revision
+          && (r.outcome == 'noop' || after.data.deleted == true))
+      );
+    }
+
+    // Push registration metadata: one document per device, readable/writable by the owner only.
+    match /users/{uid}/devices/{deviceId} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && deviceId.size() <= 64
+        && request.resource.data.keys().hasAll(['deviceId', 'fid', 'enabled', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['deviceId', 'fid', 'enabled', 'userAgent', 'updatedAt'])
+        && request.resource.data.deviceId == deviceId
+        && textOk(request.resource.data.fid, 1, 512)
+        && request.resource.data.enabled is bool
+        && (!('userAgent' in request.resource.data) || textOk(request.resource.data.userAgent, 0, 300))
+        && request.resource.data.updatedAt == request.time;
+    }
+  }
+}
