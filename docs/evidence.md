@@ -28,10 +28,10 @@ in the repository.
 
 | Command | Result |
 |---|---|
-| `npm run check` | Pass: oxlint + ESLint clean, `vue-tsc --build` clean, Vitest **80/80** (5 files), production build OK (21 precache entries) |
+| `npm run check` | Pass: oxlint + ESLint clean, `vue-tsc --build` clean, Vitest **83/83** (6 files), production build OK (26 precache entries, including the UI font) |
 | `npm run test:rules` | **21/21** passed (Firestore emulator) |
 | `npm run test:sync` | **17/17** passed (Auth + Firestore emulators) |
-| `npx playwright test` (after `npm run build:e2e`) | **14 passed, 5 skipped** in Chromium 156 (the 5 skipped are the opt-in measurement scenarios) |
+| `npx playwright test` (after `npm run build:e2e`) | **14 passed, 5 skipped** in Chromium 156 (the 5 skipped are the opt-in measurement scenarios), on the redesigned UI. The two accessibility tests also passed 10 of 10 repeated runs after the contrast fix below |
 | `MEASURE=1 npx playwright test tests/e2e/measure.spec.ts` | 5/5 measurement scenarios completed; results below |
 
 Scenario status T01–T48: `docs/test-matrix.md`.
@@ -77,6 +77,9 @@ emulator-mode production build. Reports: `docs/evidence/lighthouse/` (HTML and J
 | 2. After app fixes (still uncompressed) — mobile | 67 | 100 | 100 | 100 | 5.0 s | 5.5 s | 70 ms | 0 |
 | 3. After app fixes, gzip like Hosting — mobile | **94** | 100 | 100 | 100 | 2.3 s | 2.6 s | 70 ms | 0 |
 | 3. After app fixes, gzip like Hosting — desktop | **100** | 100 | 100 | 100 | 0.5 s | 0.7 s | 0 ms | 0 |
+| 4. Interface redesign, first build — mobile | 89 | 100 | 100 | 100 | 2.2 s | 3.0 s | 170 ms | 0 |
+| 5. Interface redesign, final — mobile | **92** | 100 | 100 | 100 | 2.4 s | 2.9 s | 0 ms | 0 |
+| 5. Interface redesign, final — desktop | **100** | 100 | 100 | 100 | 0.6 s | 0.6 s | 0 ms | 0 |
 
 What changed between runs:
 - **App fixes (1 → 2):** the layout shift came from the "ready to work offline" notice being
@@ -87,6 +90,12 @@ What changed between runs:
   which a real host would not. Under Lighthouse's simulated slow 4G link that starved the
   stylesheet. Serving gzip, as Firebase Hosting does, removed that artifact. A run against the
   deployed site is still **Blocked**.
+- **Interface redesign (3 → 4 → 5):** the first redesigned build scored 87–89 on mobile. Measured
+  back to back on the same machine, the previous design scored 93 twice, so the drop was real. Two
+  causes were fixed: the UI font's preload competed with the JavaScript, and the bundler had merged
+  Firebase into the entry chunk (longer start-up tasks). Final build: 91–92 over five runs, TBT
+  0–100 ms, CLS 0; the reports in `docs/evidence/lighthouse/` are run 5. Details:
+  `docs/decisions.md` § Interface design.
 
 A good Lighthouse score does not prove sync correctness; the T-series tests do.
 
@@ -99,30 +108,40 @@ Results: `docs/evidence/measurements.json`.
 
 | Metric | Median | Range | Runs | Method |
 |---|---|---|---|---|
-| Local save (Save → IndexedDB commit → job details shown) | 16 ms | 9.7–33.6 ms | 10 | Create via the form, Firestore unreachable |
-| Warm offline load (navigation → first job listed, 25 jobs) | 182 ms | 160–187 ms | 5 | Prepared profile, offline |
-| Queue drain, 20 operations | 3.44 s | 2.72–4.00 s | 3 | 2 jobs × (create + 9 status edits); about 170 ms per operation |
-| First download, 50 jobs (sign-in submit → all listed) | 183 ms | 179–248 ms | 3 | Includes auth, database open, one full read (50 docs) and local apply |
-| Repeat reconciliation, 50 jobs (nothing changed) | 44 ms | 43–52 ms | 3 | Sync now → Ready; 50 document reads |
-| First download, 200 jobs | 261 ms | 259–281 ms | 3 | 200 document reads |
-| Repeat reconciliation, 200 jobs | 105 ms | 101–108 ms | 3 | 200 document reads per reconciliation |
+| Local save (Save → IndexedDB commit → job details shown) | 17 ms | 9.4–49.6 ms | 10 | Create via the form, Firestore unreachable |
+| Warm offline load (navigation → first job listed, 25 jobs) | 190 ms | 180–421 ms | 5 | Prepared profile, offline |
+| Queue drain, 20 operations | 1.87 s | 1.70–3.19 s | 3 | 2 jobs × (create + 9 status edits); varies from run to run |
+| First download, 50 jobs (sign-in submit → all listed) | 242 ms | 237–320 ms | 3 | Includes auth, database open, one full read (50 docs), local apply and rendering the list |
+| Repeat reconciliation, 50 jobs (nothing changed) | 54 ms | 51–80 ms | 3 | Sync now → Ready; 50 document reads |
+| First download, 200 jobs | 416 ms | 409–424 ms | 3 | 200 document reads |
+| Repeat reconciliation, 200 jobs | 85 ms | 82–88 ms | 3 | 200 document reads per reconciliation |
 | Duplicate-effect count | 0 | — | — | T08, T09, T20, T21, T48: receipts = operations, one revision per change |
 | Disjoint-conflict preservation | 100 % | — | — | T26 in both orders (unit and emulator) |
 
-Initial goals from §22.3: local save "typically below 100 ms" was met (16 ms median); warm offline
-load "around 1 second" was met (0.18 s). Both are on this machine with emulators.
+Initial goals from §22.3: local save "typically below 100 ms" was met (17 ms median); warm offline
+load "around 1 second" was met (0.19 s). Both are on this machine with emulators.
+
+These figures are for the redesigned interface. Compared with the previous interface (warm offline
+load 182 ms, first download of 200 jobs 261 ms), rendering richer job cards costs a little: the
+first download of 200 jobs takes about 150 ms longer. A first re-measurement was slower still
+(warm load 276 ms, 200-job download 556 ms); creating an `Intl.DateTimeFormat` for every date was
+the main cost, and the formatters are now created once.
 
 **Production bundle** (`dist/`, `node scripts/bundle-size.mjs`, `docs/evidence/bundle-size.json`):
 
 | Part | Raw | Gzip |
 |---|---|---|
-| Firebase chunk (`index.esm-*.js`) | 582.1 kB | 176.3 kB |
-| App entry (`index-*.js`) | 142.4 kB | 46.3 kB |
-| Vue runtime shared chunk | 56.4 kB | 21.9 kB |
-| Notifications (lazy) | 28.2 kB | 8.6 kB |
-| Lazy screens (editor, Sync center, Settings, 404) | 24.1 kB | 8.7 kB |
-| Service worker `sw.js` | 68.9 kB | 21.3 kB |
-| CSS | 6.5 kB | 2.3 kB |
+| Firebase chunk (`firebase-*.js`, Auth + Firestore) | 547.1 kB | 161.8 kB |
+| App entry (`index-*.js`, includes the icons used) | 167.9 kB | 55.6 kB |
+| Vue and Vue Router chunk (`vue-*.js`) | 89.9 kB | 34.3 kB |
+| Notifications (lazy, includes Firebase Messaging) | 28.2 kB | 8.6 kB |
+| Lazy screens with their styles (editor, Sync center, Settings, 404) | 45.5 kB | 17.3 kB |
+| Service worker `sw.js` | 69.1 kB | 21.4 kB |
+| Main stylesheet | 30.3 kB | 7.0 kB |
+| UI font (Inter, Latin, WOFF2; precached, not on the first-visit critical path) | 48.3 kB | — |
+
+Before the redesign the app JavaScript totalled 858.8 kB raw / 270.9 kB gzip and the CSS 6.6 kB /
+2.4 kB; it is now 876.2 kB / 277.1 kB and 37.2 kB / 9.2 kB.
 
 ## Known limitations and unresolved issues
 

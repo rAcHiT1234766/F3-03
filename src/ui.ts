@@ -1,6 +1,6 @@
-// Small UI helpers: one polite live region, honest sync wording, date formatting.
+// Small UI helpers: one polite live region, honest sync wording, date and due-date formatting.
 import { ref } from 'vue'
-import type { LocalJob, OutboxRow } from './domain'
+import type { JobPriority, JobStatus, LocalJob, OutboxRow } from './domain'
 import type { SyncPhase } from './sync/engine'
 
 export const announcement = ref('')
@@ -53,20 +53,58 @@ export function phaseMessage(phase: SyncPhase, online: boolean): string {
   }
 }
 
+// Formatters are created once: constructing Intl.DateTimeFormat per call was measurable when a
+// long job list renders.
+const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
+const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
+
 export function formatDateTime(ms: number | null | undefined): string {
   if (!ms) return 'never'
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(ms)
+  return dateTimeFormat.format(ms)
 }
 
 export function formatDueDate(value: string | null): string {
   if (!value) return 'No due date'
   const [y, m, d] = value.split('-').map(Number)
   // Date-only value: format in local calendar terms, never through UTC midnight.
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
-    new Date(y!, m! - 1, d!),
-  )
+  return dateFormat.format(new Date(y!, m! - 1, d!))
 }
 
 export function pluralize(count: number, one: string, many = `${one}s`): string {
   return `${count} ${count === 1 ? one : many}`
+}
+
+export const PRIORITY_LABELS: Record<JobPriority, string> = {
+  low: 'Low priority',
+  normal: 'Normal priority',
+  high: 'High priority',
+}
+
+export type DueTone = 'none' | 'done' | 'overdue' | 'today' | 'soon' | 'later'
+
+/** Whole calendar days from `today` to a YYYY-MM-DD date, in local calendar terms. */
+export function daysUntil(value: string, today: Date = new Date()): number {
+  const [y, m, d] = value.split('-').map(Number)
+  const target = Date.UTC(y!, m! - 1, d!)
+  const start = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+  return Math.round((target - start) / 86_400_000)
+}
+
+/** Due date wording for a field technician: relative when it matters, absolute otherwise. */
+export function describeDue(
+  value: string | null,
+  status: JobStatus,
+  today: Date = new Date(),
+): { text: string; tone: DueTone } {
+  if (!value) return { text: 'No due date', tone: 'none' }
+  if (status === 'completed') return { text: `Due ${formatDueDate(value)}`, tone: 'done' }
+  const days = daysUntil(value, today)
+  if (days < 0) return { text: `Overdue by ${pluralize(-days, 'day')}`, tone: 'overdue' }
+  if (days === 0) return { text: 'Due today', tone: 'today' }
+  if (days === 1) return { text: 'Due tomorrow', tone: 'soon' }
+  if (days < 7) return { text: `Due in ${days} days`, tone: 'soon' }
+  return { text: `Due ${formatDueDate(value)}`, tone: 'later' }
 }

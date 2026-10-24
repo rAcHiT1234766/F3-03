@@ -16,7 +16,7 @@ not yet provided).
 | Chrome's installability criteria | Pass | `Page.getInstallabilityErrors` returns no errors other than `in-incognito`, which only means the automated profile is incognito-like |
 | Secure context | Pass (local) | Served from `127.0.0.1` (a secure context). HTTPS deployment: **Blocked** |
 | One service worker, controlling the page | Pass | e2e tests wait for `navigator.serviceWorker.controller` before offline steps; only `/sw.js` is registered |
-| Precache covers lazy routes (editor, Sync center, Settings) | Pass | T37: those screens open offline without having been visited; build output lists 21 precache entries including all lazy chunks |
+| Precache covers lazy routes (editor, Sync center, Settings) | Pass | T37: those screens open offline without having been visited; build output lists 26 precache entries including all lazy chunks and the UI font |
 | Offline deep links (refresh `/jobs/{id}` offline) | Pass | T35 |
 | Offline-ready message only after caching and control | Pass | The message requires both the worker's `installed` event and page control; e2e tests wait for it |
 | No caching of Firebase/API traffic in the worker | Pass | `src/sw.ts` registers only precache and navigation routes; Firestore requests fail offline (T41 shows the honest state) |

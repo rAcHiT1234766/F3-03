@@ -1,66 +1,66 @@
 {
-  "measuredAt": "2026-10-24T10:59:34.027Z",
+  "measuredAt": "2026-10-24T13:38:39.936Z",
   "buildDir": "dist",
   "totals": {
     "appJs": {
-      "raw": 858830,
-      "gzip": 270874
+      "raw": 897218,
+      "gzip": 283723
     },
     "serviceWorker": {
       "file": "sw.js",
-      "raw": 70559,
-      "gzip": 21861
+      "raw": 70713,
+      "gzip": 21911
     },
     "css": {
-      "raw": 6614,
-      "gzip": 2392
+      "raw": 38074,
+      "gzip": 9380
     }
   },
   "files": [
     {
-      "file": "assets/index.esm-D7JB1wSi.js",
-      "raw": 596074,
-      "gzip": 180521
+      "file": "assets/firebase-BkGxAlJD.js",
+      "raw": 560278,
+      "gzip": 165651
     },
     {
-      "file": "assets/index-y6TCbA6R.js",
-      "raw": 145816,
-      "gzip": 47442
+      "file": "assets/index-9XymsWbc.js",
+      "raw": 171925,
+      "gzip": 56893
+    },
+    {
+      "file": "assets/vue-qfmmNkDX.js",
+      "raw": 92030,
+      "gzip": 35168
     },
     {
       "file": "sw.js",
-      "raw": 70559,
-      "gzip": 21861
+      "raw": 70713,
+      "gzip": 21911
     },
     {
-      "file": "assets/_plugin-vue_export-helper-1GW3gTje.js",
-      "raw": 57714,
-      "gzip": 22404
+      "file": "assets/index-BDzQ6gYN.css",
+      "raw": 31041,
+      "gzip": 7126
     },
     {
-      "file": "assets/notifications-FGrM6BJ2.js",
-      "raw": 28858,
-      "gzip": 8786
+      "file": "assets/notifications-CO1_jiQF.js",
+      "raw": 28888,
+      "gzip": 8799
     },
     {
-      "file": "assets/SyncView-D6CbBIco.js",
-      "raw": 8689,
-      "gzip": 3285
+      "file": "assets/SettingsView-BbUPOuT5.js",
+      "raw": 14023,
+      "gzip": 5364
     },
     {
-      "file": "assets/SettingsView-BuqXOPcN.js",
-      "raw": 8563,
-      "gzip": 3276
+      "file": "assets/SyncView-ow8cPBQx.js",
+      "raw": 13224,
+      "gzip": 4914
     },
     {
-      "file": "assets/JobEditorView-DPO6P5cL.js",
-      "raw": 7093,
-      "gzip": 2673
-    },
-    {
-      "file": "assets/index-B_cY8G8s.css",
-      "raw": 6284,
-      "gzip": 2094
+      "file": "assets/JobEditorView-DZ464fwC.js",
+      "raw": 9616,
+      "gzip": 3649
     },
     {
       "file": "assets/workbox-window.prod.es5-Bd17z0YL.js",
@@ -68,34 +68,44 @@
       "gzip": 2199
     },
     {
+      "file": "assets/SyncView-CqUYascM.css",
+      "raw": 4732,
+      "gzip": 1293
+    },
+    {
       "file": "index.html",
-      "raw": 1410,
-      "gzip": 730
+      "raw": 2738,
+      "gzip": 1255
+    },
+    {
+      "file": "assets/SettingsView-CXDOdBt4.css",
+      "raw": 1742,
+      "gzip": 654
+    },
+    {
+      "file": "assets/NotFoundView-Bjaovmbd.js",
+      "raw": 1069,
+      "gzip": 684
     },
     {
       "file": "manifest.webmanifest",
       "raw": 560,
-      "gzip": 301
+      "gzip": 302
     },
     {
-      "file": "assets/NotFoundView-DAzMN1gU.js",
-      "raw": 370,
-      "gzip": 288
+      "file": "assets/JobEditorView-DM2hfO28.css",
+      "raw": 559,
+      "gzip": 307
     },
     {
-      "file": "assets/SyncView-C-G2Zy2_.css",
-      "raw": 191,
-      "gzip": 138
+      "file": "assets/download-Ct_EUgsr.js",
+      "raw": 378,
+      "gzip": 256
     },
     {
-      "file": "assets/SettingsView-DDOEsQpl.css",
-      "raw": 96,
-      "gzip": 97
-    },
-    {
-      "file": "assets/JobEditorView-Cwklx0_T.css",
-      "raw": 43,
-      "gzip": 63
+      "file": "assets/check-1c5iUeho.js",
+      "raw": 134,
+      "gzip": 146
     }
   ]
 }

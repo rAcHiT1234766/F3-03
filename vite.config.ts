@@ -34,8 +34,8 @@ export default defineConfig({
       // Registration happens through `virtual:pwa-register` in src/pwa.ts only.
       injectRegister: false,
       injectManifest: {
-        // Every built chunk, including lazy routes, so unvisited screens open offline.
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // Every built chunk (including lazy routes) and the UI font, so screens open offline.
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
       },
       manifest: {
         id: '/',
@@ -46,7 +46,7 @@ export default defineConfig({
         start_url: '/jobs',
         scope: '/',
         display: 'standalone',
-        background_color: '#f5f6f4',
+        background_color: '#f3f6f4',
         theme_color: '#1f6f5c',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -65,6 +65,24 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
+  build: {
+    rolldownOptions: {
+      output: {
+        // Firebase and Vue in their own chunks: shorter start-up tasks on slow phones (measured
+        // with Lighthouse, see docs/decisions.md). All chunks still load and precache together.
+        codeSplitting: {
+          groups: [
+            // Messaging (and the installations API it uses) stays in its lazy chunk.
+            {
+              name: 'firebase',
+              test: /node_modules[\\/](@firebase|firebase)[\\/](?!messaging|installations)/,
+            },
+            { name: 'vue', test: /node_modules[\\/](@vue|vue|vue-router)[\\/]/ },
+          ],
+        },
+      },
     },
   },
   preview: { port: 4173, strictPort: true },

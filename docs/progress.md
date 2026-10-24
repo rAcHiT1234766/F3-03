@@ -3,6 +3,74 @@
 Entries follow the format in spec §31.1. Results are what was actually observed; anything not
 executed is marked not run or blocked. Newest first.
 
+## 2026-10-24 — Interface redesign (checkpoint 3)
+
+**Date and commit:** 2026-10-24, fourth commit on `main` (follows `b1f4937`).
+
+**Current phase:** interface and accessibility work requested by the owner, after Phase 9. No
+sync, storage, rules or push behavior changed.
+
+**Behavior now implemented:**
+- A design system in `src/style.css`: colour, type, spacing, radius and shadow tokens, light and
+  dark themes, and support for high contrast, forced colors (Windows contrast themes), reduced
+  motion and larger touch targets on touch screens.
+- Theme choice in **Settings → Appearance** (System, Light, Dark), applied before first paint and
+  kept in this browser only.
+- Icons (`@lucide/vue` 1.54.0) and the Inter variable font (`@fontsource-variable/inter` 5.3.0,
+  Latin only, precached). Status, sync state and priority always show words with the icon.
+- Jobs: card grid with a status stripe, search with a clear button, status filter pills with
+  counts, due dates in words ("Due today", "Overdue by 2 days"), an overdue count in the header,
+  loading skeletons and empty states.
+- Job details: progress buttons, separate description and notes, a job info panel and a sync
+  panel. Job editor: grouped sections, choice pills for status and priority, character counters.
+- Sync center: a status summary in plain language, stat tiles, conflicts side by side, the queue
+  as a timeline, and the raw error under "Technical details".
+- Sign-in: introduction panel, show-password button and a loading state on submit.
+- Phones: a bottom tab bar for Jobs, Sync center and Settings, and a floating New job button.
+- Confirmations (delete job, discard changes, discard sync items) use a native modal dialog that
+  keeps and returns focus, in place of `window.confirm`.
+
+**Invariants or bugs addressed (each found by a test or a measurement):**
+- Section headings that contained a field's label ("Job and customer") made `getByLabel`
+  ambiguous in the browser suite; the headings were renamed.
+- Fade-in animations let axe measure text mid-fade (contrast 3.46:1) in about one run in five.
+  Animations now move, never fade, text; the accessibility tests then passed 10 of 10 repeats.
+- `backdrop-filter` on the header made it the containing block of the fixed tab bar, so the bar
+  showed inside the header on phones; it is off at phone width.
+- Mobile Lighthouse fell from 93 (old design, same machine) to 87–89. Font preload and Firebase
+  merged into the entry chunk were the causes; final 91–92.
+- Creating an `Intl.DateTimeFormat` per date slowed the 200-job list (556 ms); formatters are now
+  created once (416 ms).
+- Storage above 1024 MB showed as "10240.2 MB"; it now shows GB.
+
+**Commands run and actual results:**
+- `npm run check`: passed. Lint clean, typecheck clean, **83/83** unit tests (3 new, for due-date
+  wording), build with 26 precache entries.
+- `npx playwright test` (after `npm run build:e2e`): **14 passed, 5 skipped**. T06 (delete) now
+  confirms in the in-app dialog instead of the browser's.
+- `MEASURE=1 npx playwright test tests/e2e/measure.spec.ts`: 5/5; results in `docs/evidence.md`.
+- Lighthouse 13.5.0 on `/sign-in`: mobile **92** / desktop **100** Performance, 100
+  Accessibility, Best Practices and SEO, CLS 0.
+- axe: no serious or critical violations on 7 screens, in light and dark.
+- `npm run test:rules` and `npm run test:sync`: **not re-run** (no rules or sync code changed;
+  last results 21/21 and 17/17 at checkpoint 2).
+
+**Browser/device checks performed:** automated Chromium 156 (headless) and screenshots at phone
+(390 px) and desktop widths in both themes. Not run: real devices, Firefox, Safari, screen reader,
+Windows contrast themes by hand.
+
+**Required external work:** unchanged from checkpoint 2.
+
+**Known limitations:** the first download of 200 jobs takes about 150 ms longer than before
+because the cards render more. The UI font may appear only from the second visit (it is not allowed to
+delay the first one).
+
+**Decisions and reasons:** `docs/decisions.md` § Interface design.
+
+**Next three tasks:** unchanged from checkpoint 2.
+
+**Exact owner action needed:** unchanged from checkpoint 2.
+
 ## 2026-10-24 — Phase 9, verification and documentation (checkpoint 2)
 
 **Date and commit:** 2026-10-24, second commit on `main` (follows `71ea90f`).

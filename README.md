@@ -33,6 +33,19 @@ allow.
 - **Account separation on a shared device** keeps each account's data apart inside the app. It
   does not encrypt browser files against someone who controls the device. Use fictional data.
 
+## Interface and accessibility
+
+- Light and dark themes follow the device setting by default; **Settings → Appearance** can fix
+  one. High-contrast, forced-colors (Windows contrast themes) and reduced-motion preferences are
+  respected.
+- Status, sync state and due dates are always shown as words and an icon, never by colour alone.
+  Due dates read as "Due today", "Overdue by 2 days" and so on.
+- On a phone, Jobs, Sync center and Settings are in a bottom tab bar. On touch screens, buttons,
+  fields and choice pills are 44 px high (small buttons 40 px).
+- Keyboard: a skip link, visible focus on every control, and confirmations in a native modal
+  dialog that keeps focus and returns it afterwards. Automated axe checks cover 7 screens in both
+  themes.
+
 ## Supported browsers
 
 The baseline is current Chromium browsers (Chrome, Edge), automated-tested with Chromium 156.

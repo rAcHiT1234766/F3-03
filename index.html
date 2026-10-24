@@ -1,24 +1,84 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="FieldLog: a field-service job tracker that keeps working offline and syncs when connected." />
-    <meta name="theme-color" content="#1f6f5c" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="FieldLog: a field-service job tracker that keeps working offline and syncs when connected."
+    />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141b18" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
     <title>FieldLog</title>
+    <script>
+      // Apply a theme chosen in Settings before first paint (see src/theme.ts).
+      try {
+        var theme = localStorage.getItem('fieldlog:theme')
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+      } catch (e) {}
+    </script>
     <style>
-      /* Static first paint while the app's JavaScript loads; same height as the app header. */
-      .boot-bar { background: var(--surface, #fff); border-bottom: 1px solid var(--border, #d4d9d3); }
-      .boot-bar > div, .boot-msg { max-width: 880px; margin: 0 auto; padding: 0.6rem 1rem; }
-      .boot-bar > div { font-weight: 800; font-size: 1.15rem; line-height: 1.5; }
-      .boot-msg { padding-top: 1.25rem; color: var(--muted, #59625b); }
+      /* Static first paint while the app's JavaScript loads; same geometry as the app header. */
+      .boot-bar,
+      .boot-msg {
+        /* System font: the boot screen must not start the UI font download early. */
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      .boot-bar {
+        background: var(--surface, #fff);
+        border-bottom: 1px solid var(--border, #dbe3df);
+      }
+      .boot-bar > div,
+      .boot-msg {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 1.25rem;
+      }
+      .boot-bar > div {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        min-height: 60px;
+        font-weight: 750;
+        font-size: 1.125rem;
+        letter-spacing: -0.02em;
+      }
+      .boot-msg {
+        padding-top: 1.75rem;
+        color: var(--text-2, #4b5a53);
+      }
+      @media (max-width: 640px) {
+        .boot-bar > div,
+        .boot-msg {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+      }
     </style>
   </head>
   <body>
     <div id="app">
-      <div class="boot-bar"><div>FieldLog</div></div>
+      <div class="boot-bar">
+        <div>
+          <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true">
+            <rect width="64" height="64" rx="14" fill="#1f6f5c" />
+            <rect x="18" y="15" width="28" height="36" rx="4" fill="#fff" />
+            <rect x="26" y="11.5" width="12" height="7" rx="2.2" fill="#12483b" />
+            <path
+              d="M23.7 34.6 29.4 40.3 40.3 28.2"
+              fill="none"
+              stroke="#1f6f5c"
+              stroke-width="4.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          FieldLog
+        </div>
+      </div>
       <p class="boot-msg">Opening FieldLog…</p>
     </div>
     <noscript>FieldLog needs JavaScript to run.</noscript>

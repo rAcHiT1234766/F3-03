@@ -35,7 +35,7 @@ Versions actually installed (not copied from a tutorial):
   was ready in the same session, so the UI was built on it directly. The Phase 1 gate (a form
   interaction test, type checking, a production build) is still met by `tests/unit/editor.test.ts`
   and `npm run check`.
-- **Not used:** Pinia, RxJS, Tailwind, Storybook. Dexie live queries are consumed directly by a
+- **Not used:** Pinia, RxJS, Tailwind, Storybook, a component library. Dexie live queries are consumed directly by a
   small composable.
 
 ## Sync semantics
@@ -152,8 +152,59 @@ Made only after Lighthouse showed a problem (mobile Performance 60):
 - **Browser tests use a small static server** (`tests/e2e/static-server.mjs`), not `vite preview`,
   so the update test can swap build A for build B on the same origin.
 
+## Interface design (2026-10-24)
+
+The UI was redesigned after the functional work was complete. Behaviour, data flow and the sync
+protocol did not change.
+
+- **Design system in plain CSS** (`src/style.css`): colour tokens on `:root`, a dark set applied
+  from the OS setting or from Settings → Appearance (`data-theme` on `<html>`, chosen before
+  first paint by a small inline script in `index.html`, stored in `localStorage` as a per-device
+  preference). Text/background pairs were chosen for WCAG AA; `prefers-contrast: more`,
+  `forced-colors: active` and `prefers-reduced-motion` are handled. Still no CSS framework.
+- **Two UI packages:** `@lucide/vue` 1.54.0 for icons (tree-shaken: only the ~25 icons in use are
+  bundled; pinned to a release over two weeks old rather than the newest, as a supply-chain
+  precaution) and `@fontsource-variable/inter` 5.3.0, self-hosted so the font works offline.
+  Only the Latin subset is used.
+- **Status is never colour alone:** every status, priority and sync state has an icon and text.
+- **Due dates** are worded relative to today for open jobs ("Due today", "Overdue by 2 days";
+  `describeDue` in `src/ui.ts`, unit-tested) and use local calendar days, never timestamps.
+- **Confirmations use one native modal `<dialog>`** (`src/dialog.ts`, `ConfirmDialog.vue`)
+  instead of `window.confirm()`: the browser provides focus trapping, Escape and an inert
+  background; destructive dialogs start focused on Cancel. Without a mounted host (component
+  tests) it falls back to `confirm()`. T06 now confirms through the dialog.
+- **Phones get a bottom tab bar** and a floating "New job" button; it is the same `<nav>` restyled
+  by CSS, so there is one set of links. The header's `backdrop-filter` is turned off at that size
+  because it would make the header the containing block of the fixed tab bar (found in the
+  screenshot review).
+- **Test-facing names were kept:** headings, labels, button names and `data-testid` values the
+  suites rely on are unchanged. Editor section headings avoid field names, because Playwright's
+  `getByLabel` also matches regions named by `aria-labelledby` ("Job and customer" matched
+  "Customer").
+- **No fading text.** Toasts slide in without an opacity change and delayed loading text switches
+  on at once. The axe scan intermittently caught the "ready offline" toast mid-fade at 3.46:1
+  contrast (found by repeating the accessibility test after one failure).
+
+### Performance cost, measured
+
+Lighthouse 13.5 mobile on `/sign-in`, the previous commit and the redesign measured back to back
+on the same machine: previous design 93 and 93; first redesign build 88, 87 and 88 (LCP 3.1 s,
+TBT 180 ms). Two causes were found in the reports and fixed:
+
+1. **The font preload competed with the JavaScript** on the throttled link. The preload was
+   removed, the boot screen uses the system font, and the face uses `font-display: optional`: a
+   first visit keeps the system font if Inter is not ready at once (no swap, no layout shift),
+   and later launches read Inter from the service-worker precache.
+2. **The bundler had merged Firebase into the entry chunk**, giving longer start-up tasks. Explicit
+   `codeSplitting` groups (`vite.config.ts`) restore separate Firebase and Vue chunks, and keep
+   Firebase Messaging and Installations in the lazy notifications chunk.
+
+Result: 91–92 over five runs (LCP 2.7–2.9 s, TBT 10–100 ms, CLS 0). The remaining gap of about
+0.3 s LCP is roughly 14 kB gzip of icons and screen code plus a larger stylesheet, accepted for
+the interface. Desktop stays at 100.
+
 ## Not optimized yet
 
-- The main JavaScript chunk is about 769 kB raw / 237 kB gzip, mostly Firebase Auth and
-  Firestore. It is recorded as a baseline and left alone until a measured problem justifies
-  splitting it (spec §22.3: do not optimize before an observed issue).
+- The Firebase chunk is about 547 kB raw / 162 kB gzip (Auth and Firestore). It loads at start
+  because the session code needs it; deferring it would restructure session start-up for a
+  first-visit-only gain (spec §22.3: do not optimize before an observed issue).
