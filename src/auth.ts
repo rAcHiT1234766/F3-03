@@ -6,7 +6,6 @@ import { markRaw, ref, shallowRef } from 'vue'
 import { ensureDeviceId, openAccountDb, type FieldLogDB } from './db'
 import { initFirebase, readConfig, type FirebaseServices } from './firebase'
 import type { LocalContext } from './jobs'
-import { cleanupNotificationsBeforeSignOut } from './notifications'
 import { createSyncEngine, type SyncEngine } from './sync/engine'
 import { createFirestoreRemote } from './sync/remote'
 
@@ -135,7 +134,10 @@ export async function signIn(email: string, password: string): Promise<void> {
 export async function signOutUser(options: { removeLocalData?: boolean } = {}): Promise<void> {
   if (!services) return
   const s = session.value
-  if (s) await cleanupNotificationsBeforeSignOut(services, s)
+  if (s) {
+    const { cleanupNotificationsBeforeSignOut } = await import('./notifications')
+    await cleanupNotificationsBeforeSignOut(services, s)
+  }
   await signOut(services.auth)
   await switchUser(null)
   await disposal

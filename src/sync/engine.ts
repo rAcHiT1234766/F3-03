@@ -46,7 +46,7 @@ export type SyncStatus = {
   lastError: string | null
 }
 
-export type CycleSummary = { pulled: boolean; sent: number; acked: number; halted: string | null }
+type CycleSummary = { pulled: boolean; sent: number; acked: number; halted: string | null }
 
 export type EngineOptions = {
   db: FieldLogDB
@@ -97,7 +97,6 @@ export function createSyncEngine(options: EngineOptions) {
   let requested = false
   let loop: Promise<void> | null = null
   let retryTimer: ReturnType<typeof setTimeout> | undefined
-  let lastSummary: CycleSummary | null = null
   const cleanups: (() => void)[] = []
 
   const active = () => !stopped && isCurrent()
@@ -243,7 +242,7 @@ export function createSyncEngine(options: EngineOptions) {
       }
       try {
         await locks.request(lockName, async () => {
-          lastSummary = await cycle()
+          await cycle()
         })
       } catch (e) {
         status.lastError = `Could not start sync: ${String((e as Error)?.message ?? e).slice(0, 200)}`
@@ -329,9 +328,6 @@ export function createSyncEngine(options: EngineOptions) {
     stop,
     whenIdle: async () => {
       while (loop) await loop
-    },
-    get lastSummary() {
-      return lastSummary
     },
   }
 }

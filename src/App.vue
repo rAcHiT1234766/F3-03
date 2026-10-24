@@ -4,16 +4,17 @@ import { useRoute, useRouter } from 'vue-router'
 import { authPhase, configProblems, getServices, session, storageNotice } from './auth'
 import { useLiveQuery, useOnline } from './composables/useJobs'
 import { isUuid, type JobMessage } from './domain'
-import { attachNotifications } from './notifications'
 import { applyUpdate, controlled, needRefresh, offlineReady } from './pwa'
-import { announce, announcement, phaseMessage, pluralize } from './ui'
+import { announcement, phaseMessage, pluralize } from './ui'
 
 const router = useRouter()
 const route = useRoute()
 const online = useOnline()
 const pushBanner = ref<JobMessage | null>(null)
 const updateMessage = ref<string | null>(null)
+const updating = ref(false)
 const offlineReadyDismissed = ref(false)
+const updateDeferred = ref(false)
 
 const pending = useLiveQuery(
   async () => (session.value ? session.value.db.outbox.count() : 0),
@@ -37,20 +38,22 @@ watch(authPhase, (phase) => {
 })
 
 // Per-session notification wiring, disposed when the account changes or signs out.
+// Firebase Messaging is loaded on demand so it is not part of the first screen's bundle.
 let detachNotifications: (() => void) | null = null
 watch(
   session,
-  (s) => {
+  async (s) => {
     detachNotifications?.()
     detachNotifications = null
     pushBanner.value = null
     const services = getServices()
-    if (s && services) {
-      detachNotifications = attachNotifications(services, s, (message) => {
-        pushBanner.value = message
-        s.sync.request('push')
-      })
-    }
+    if (!s || !services) return
+    const { attachNotifications } = await import('./notifications')
+    if (session.value !== s) return
+    detachNotifications = attachNotifications(services, s, (message) => {
+      pushBanner.value = message
+      s.sync.request('push')
+    })
   },
   { immediate: true },
 )
@@ -67,8 +70,11 @@ onBeforeUnmount(() => {
 })
 
 async function update() {
+  // Messages appear inside the role="status" banner, which announces them.
+  updating.value = true
+  updateMessage.value = null
   updateMessage.value = await applyUpdate(session.value)
-  if (updateMessage.value) announce(updateMessage.value)
+  if (updateMessage.value) updating.value = false // otherwise the page reloads
 }
 
 function openPushedJob() {
@@ -100,29 +106,8 @@ function openPushedJob() {
     </div>
   </header>
 
-  <div class="container">
-    <p v-if="storageNotice" class="banner banner-warn" role="alert">{{ storageNotice }}</p>
-    <div v-if="needRefresh" class="banner banner-warn row" role="status">
-      <span>A new version of FieldLog is ready.</span>
-      <button class="btn btn-small" type="button" @click="update">Update now</button>
-      <span v-if="updateMessage" class="small">{{ updateMessage }}</span>
-    </div>
-    <div
-      v-if="offlineReady && controlled && !offlineReadyDismissed && !needRefresh"
-      class="banner banner-ok row"
-      role="status"
-      data-testid="offline-ready"
-    >
-      <span>FieldLog is ready to work offline on this device.</span>
-      <button class="btn btn-small" type="button" @click="offlineReadyDismissed = true">
-        Dismiss
-      </button>
-    </div>
-    <div v-if="pushBanner" class="banner row" role="status">
-      <span>A job was updated.</span>
-      <button class="btn btn-small" type="button" @click="openPushedJob">Open job</button>
-      <button class="btn btn-small" type="button" @click="pushBanner = null">Dismiss</button>
-    </div>
+  <div v-if="storageNotice" class="container">
+    <p class="banner banner-warn" role="alert">{{ storageNotice }}</p>
   </div>
 
   <main id="main" class="container" tabindex="-1">
@@ -148,6 +133,41 @@ function openPushedJob() {
       :key="session?.generation ?? 'signed-out'"
     />
   </main>
+
+  <!-- Transient notices come after the page content, so they never push it down. -->
+  <div class="toasts">
+    <div v-if="needRefresh && !updateDeferred" class="banner banner-warn row" role="status">
+      <span>A new version of FieldLog is ready.</span>
+      <button class="btn btn-small" type="button" :disabled="updating" @click="update">
+        {{ updating ? 'Updating…' : 'Update now' }}
+      </button>
+      <button
+        class="btn btn-small"
+        type="button"
+        :disabled="updating"
+        @click="updateDeferred = true"
+      >
+        Later
+      </button>
+      <span v-if="updateMessage" class="small">{{ updateMessage }}</span>
+    </div>
+    <div
+      v-if="offlineReady && controlled && !offlineReadyDismissed && !needRefresh"
+      class="banner banner-ok row"
+      role="status"
+      data-testid="offline-ready"
+    >
+      <span>FieldLog is ready to work offline on this device.</span>
+      <button class="btn btn-small" type="button" @click="offlineReadyDismissed = true">
+        Dismiss
+      </button>
+    </div>
+    <div v-if="pushBanner" class="banner row" role="status">
+      <span>A job was updated.</span>
+      <button class="btn btn-small" type="button" @click="openPushedJob">Open job</button>
+      <button class="btn btn-small" type="button" @click="pushBanner = null">Dismiss</button>
+    </div>
+  </div>
 
   <div class="sr-only" aria-live="polite" aria-atomic="true">{{ announcement }}</div>
 </template>
@@ -213,5 +233,30 @@ nav a.router-link-active {
 
 main:focus {
   outline: none;
+}
+
+.toasts {
+  /* In normal flow at the end of the page and sticky to the viewport bottom: it never pushes
+     content down (no layout shift) and never permanently covers controls (its space is reserved). */
+  position: sticky;
+  bottom: 0.75rem;
+  z-index: 20;
+  display: grid;
+  gap: 0.5rem;
+  max-width: 880px;
+  margin: 0.75rem auto;
+  padding: 0 1rem;
+  pointer-events: none;
+}
+
+.toasts > .banner {
+  margin: 0;
+  pointer-events: auto;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
+  background-clip: padding-box;
+}
+
+.toasts > .banner:not(.banner-warn, .banner-ok) {
+  background: var(--surface);
 }
 </style>

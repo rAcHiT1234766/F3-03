@@ -94,6 +94,34 @@ Versions actually installed (not copied from a tutorial):
    because a failed commit applies nothing, the receipt check makes re-runs idempotent, and a
    genuine denial repeats every time. A temporary revert of the fix makes the test fail again.
 
+3. **Update applied but the page did not reload** (found by T38). workbox-window records whether a
+   page "is an update" once, at registration. A page first loaded uncontrolled (a first visit,
+   where `clientsClaim` takes control later) therefore never got the plugin's reload, and kept
+   running old code under the new worker. Fix (`src/pwa.ts`): after the user's own Update now, the
+   app reloads exactly once on `controllerchange`, and the plugin's reload is suppressed
+   (`onNeedReload: () => {}`). This avoids both a double reload and a reload loop.
+4. **Duplicate screen-reader announcements** (found by a strict-mode locator in T38). Messages
+   appeared both in a visible `role="status"` banner and in the hidden announcer. The announcer is
+   now used only when there is no visible live region, such as just before navigating away.
+5. **Layout shift, then a covered Save button.** Lighthouse traced CLS 0.119 to the "ready offline"
+   notice being inserted above `<main>`. Moving notices into a fixed toast then made the toast
+   cover the editor's Save button on short pages (found by the browser suite). Notices now sit in
+   a sticky region after the page content: CLS 0, and nothing is permanently covered.
+
+## Performance changes made after measurement
+
+Made only after Lighthouse showed a problem (mobile Performance 60):
+
+- A static boot shell in `index.html` paints the header and "Opening FieldLog…" before the
+  JavaScript runs.
+- Firebase Messaging is loaded with `import()` after sign-in (8.6 kB gzip moved off the first
+  screen).
+- The e2e/Lighthouse static server now gzips like Firebase Hosting. Before that, the throttled
+  mobile run was measuring an uncompressed local server, not the app.
+- Not done: splitting Firestore out of the startup path. Its chunk (176 kB gzip) is precached
+  after the first visit (warm offline load 182 ms), and deferring it would restructure the
+  session code for a first-visit-only gain.
+
 ## Firebase integration
 
 - **Firestore memory cache only** (`memoryLocalCache`). The Dexie outbox is the durable queue, and

@@ -8,9 +8,19 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
     <title>FieldLog</title>
+    <style>
+      /* Static first paint while the app's JavaScript loads; same height as the app header. */
+      .boot-bar { background: var(--surface, #fff); border-bottom: 1px solid var(--border, #d4d9d3); }
+      .boot-bar > div, .boot-msg { max-width: 880px; margin: 0 auto; padding: 0.6rem 1rem; }
+      .boot-bar > div { font-weight: 800; font-size: 1.15rem; line-height: 1.5; }
+      .boot-msg { padding-top: 1.25rem; color: var(--muted, #59625b); }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="boot-bar"><div>FieldLog</div></div>
+      <p class="boot-msg">Opening FieldLog…</p>
+    </div>
     <noscript>FieldLog needs JavaScript to run.</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -15,7 +15,7 @@ import {
   type FieldKey,
   type JobFields,
 } from '../domain'
-import { NotEditableError, ValidationError, createJob, editJob } from '../jobs'
+import { ValidationError, createJob, editJob } from '../jobs'
 import { announce, hasUnsavedDraft } from '../ui'
 
 const props = defineProps<{ id?: string }>()
@@ -112,8 +112,8 @@ async function save() {
       await focusFirstError()
     } else {
       // NotEditableError or LocalSaveError: the form keeps everything the user typed.
+      // The role="alert" banner announces the message.
       saveError.value = (e as Error).message
-      if (!(e instanceof NotEditableError)) announce(saveError.value)
     }
   } finally {
     saving.value = false

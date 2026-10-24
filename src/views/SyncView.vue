@@ -79,15 +79,14 @@ function canEdit(c: ConflictNotice): boolean {
   return !!job && !job.view.deleted
 }
 
+/** Results appear in the status card's role="status" banner, which announces them. */
 async function run(action: () => Promise<unknown>, success: string) {
   message.value = null
   try {
     await action()
     message.value = success
-    announce(success)
   } catch (e) {
     message.value = (e as Error).message
-    announce(message.value)
   }
 }
 
@@ -114,7 +113,6 @@ async function checkAndDiscard(row: OutboxRow) {
     unknown:
       'Could not confirm with the server whether this change was applied, so it was kept. Try again when online.',
   }[result]
-  announce(message.value)
 }
 
 function useValue(c: ConflictNotice, value: FieldValue) {

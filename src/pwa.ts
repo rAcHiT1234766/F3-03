@@ -9,6 +9,7 @@ export const needRefresh = ref(false)
 export const offlineReady = ref(false)
 export const controlled = ref(false)
 let updateServiceWorker: (() => Promise<void>) | null = null
+let reloadOnControllerChange = false
 
 type InstallPromptEvent = Event & {
   prompt(): Promise<void>
@@ -36,8 +37,16 @@ export function startPwa(): void {
   controlled.value = !!navigator.serviceWorker.controller
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     controlled.value = !!navigator.serviceWorker.controller
+    // Reload exactly once, and only after the user asked for the update. (workbox-window
+    // decides "is this an update?" at registration, so on a page first loaded uncontrolled it
+    // would never reload; a first install's controller change must not reload either.)
+    if (reloadOnControllerChange) {
+      reloadOnControllerChange = false
+      window.location.reload()
+    }
   })
   updateServiceWorker = registerSW({
+    onNeedReload: () => {}, // the controllerchange handler above owns the reload
     onNeedRefresh: () => (needRefresh.value = true),
     onOfflineReady: () => (offlineReady.value = true),
     onRegisteredSW(_url, registration) {
@@ -52,12 +61,13 @@ export function startPwa(): void {
 
 /**
  * Applies a waiting update: never while a form has unsaved input, and only after any
- * in-flight sync acknowledgement has finished. The new worker then reloads the page once.
+ * in-flight sync acknowledgement has finished. The page reloads once the new worker controls it.
  */
 export async function applyUpdate(s: Session | null): Promise<string | null> {
   if (hasUnsavedDraft.value) return 'Save or discard your unsaved changes before updating.'
   if (!updateServiceWorker) return 'No update is waiting.'
   if (s) await s.sync.whenIdle()
+  reloadOnControllerChange = true
   await updateServiceWorker()
   return null
 }

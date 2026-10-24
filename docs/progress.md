@@ -1,7 +1,83 @@
 # Progress
 
 Entries follow the format in spec §31.1. Results are what was actually observed; anything not
-executed is marked not run or blocked.
+executed is marked not run or blocked. Newest first.
+
+## 2026-10-24 — Phase 9, verification and documentation (checkpoint 2)
+
+**Date and commit:** 2026-10-24, second commit on `main` (follows `71ea90f`).
+
+**Current phase:** everything that can be done locally for Phases 0–9 and the verification and
+documentation work (§20–§26) is done. The remaining work needs external access (see below).
+
+**Behavior now implemented:**
+- Trusted push sender `scripts/send-test-push.mjs`: Admin SDK, Application Default Credentials,
+  FID target. It refuses demo projects and emulator environments and never prints IDs or
+  credentials.
+- The update flow now reloads exactly once after the user's own Update now (fixed, below) and
+  shows "Updating…" while it waits for in-flight sync.
+- Transient notices (offline ready, update, push) moved into a sticky region after the page
+  content: no layout shift, and controls are never permanently covered.
+- Static boot shell in `index.html` for first paint. Firebase Messaging loads only after sign-in.
+- The app version (`package version + git commit` or `FIELDLOG_BUILD_ID`) is shown in Settings.
+- CI workflow (`.github/workflows/ci.yml`): configured, **not run** (no GitHub remote).
+- Docs: README, architecture, sync protocol, test matrix, PWA checklist, evidence report,
+  requirements checklist, presentation outline, reflection questions, submission index.
+
+**Invariants or bugs addressed (each found by a test):**
+- The update did not reload a page that was first loaded uncontrolled (workbox-window fixes
+  `isUpdate` at registration). The app now owns a single reload on the user's update (T38).
+- Status messages were announced twice: in a visible `role="status"` region and again in the
+  hidden announcer. The duplicate announcement was removed where a visible live region exists.
+- The "ready offline" notice inserted above the page caused CLS 0.119 (Lighthouse). As a fixed
+  toast it then covered the editor's Save button (found by the browser suite); now it is sticky,
+  in flow.
+- The test server sent JavaScript uncompressed, which distorted Lighthouse's throttled mobile
+  result. It now gzips as Hosting does.
+
+**Commands run and actual results:**
+- `npm run check`: passed. Lint clean, typecheck clean, **80/80** unit tests, build with 23
+  precache entries.
+- `npm run test:rules`: **21/21**. `npm run test:sync`: **17/17**.
+- `npx playwright test` (after `npm run build:e2e`): **14 passed, 5 skipped** (the 5 skipped are
+  the opt-in measurement scenarios).
+- `MEASURE=1 npx playwright test tests/e2e/measure.spec.ts`: 5/5; results in `docs/evidence.md`.
+- Lighthouse 13.5.0 on `/sign-in`: mobile 94 / desktop 100 Performance, 100 Accessibility, Best
+  Practices and SEO, CLS 0, using the gzip test server. The progression is in `docs/evidence.md`.
+- axe: no serious or critical violations on 7 screens, in light and dark.
+
+**Browser/device checks performed:** automated Chromium 156 only (headless). Not run: manual
+install, Firefox, Safari, real devices, OS-level network disconnection, screen reader.
+
+**Required external work:**
+- Firebase project, HTTPS deployment, deployed rules: **blocked** (no project or credentials).
+- Real push T43–T45 (click partly covered on the page side): **blocked**.
+- Installation T42: **not run** (needs an interactive browser).
+- GitHub repository, CI run, Google Drive upload and reviewer access: **blocked**.
+- Demo recording, final deck and personal reflection: **needs the intern**.
+
+**Known limitations:** unchanged from checkpoint 1. See `docs/evidence.md` § Known limitations.
+
+**Decisions and reasons:** `docs/decisions.md`. New this checkpoint: FID push registration, the
+reload ownership, toast placement, the lazy messaging chunk, and the e2e static server.
+
+**Next three tasks:**
+1. Create the Firebase project and `.env.local`; deploy rules and hosting; repeat T35/T38 and
+   Lighthouse on the deployed HTTPS origin.
+2. Enable notifications on a real device; run T43–T45 with `scripts/send-test-push.mjs`; install
+   on Chrome/Edge (T42) and record the results in `docs/test-matrix.md`.
+3. Push to GitHub and confirm CI passes; record the demo video; finish the deck and reflection;
+   upload to Drive per `docs/submission-index.md`.
+
+**Exact owner action needed:**
+- Leftover processes from this session that are safe to stop (it was not permitted to stop them):
+  Java PIDs 18096 (ports 8080/9150) and 18228 (8085/9151), the emulators from early runs; and the
+  test servers from an interrupted run, node PID 19884 (emulator hub, Auth 9099, UI 4000) with
+  Java PID 10964 (Firestore 8086/9152), and node PID 6560 (static server 4173). Later test runs
+  reuse the last group.
+- Provide Firebase project access (Auth email/password, Firestore, Cloud Messaging, a Web app and a
+  VAPID key) and decide whether deployment to Firebase Hosting is authorized.
+- Create a GitHub repository and authorize pushing to it, if wanted.
 
 ## 2026-10-24 — Phases 0–8 foundation (checkpoint 1)
 

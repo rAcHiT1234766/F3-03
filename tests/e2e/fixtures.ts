@@ -109,3 +109,51 @@ export async function serverReceipts(uid: string): Promise<Record<string, unknow
   const docs = (list?.documents as { fields: Record<string, RestValue> }[] | undefined) ?? []
   return docs.map((d) => decode({ mapValue: { fields: d.fields } }) as Record<string, unknown>)
 }
+
+/**
+ * Seeds canonical jobs for one user directly in the emulator (rules bypassed with "Bearer owner").
+ * Used only to prepare measurement datasets; permission behaviour is tested elsewhere.
+ */
+export async function seedJobs(uid: string, count: number): Promise<void> {
+  const base = 'projects/demo-fieldlog/databases/(default)/documents'
+  const str = (stringValue: string) => ({ stringValue })
+  for (let start = 0; start < count; start += 400) {
+    const writes = Array.from({ length: Math.min(400, count - start) }, (_, i) => {
+      const id = crypto.randomUUID()
+      return {
+        update: {
+          name: `${base}/users/${uid}/jobs/${id}`,
+          fields: {
+            schemaVersion: { integerValue: '1' },
+            id: str(id),
+            ownerId: str(uid),
+            deleted: { booleanValue: false },
+            revision: { integerValue: '1' },
+            lastOpId: str(crypto.randomUUID()),
+            fields: {
+              mapValue: {
+                fields: {
+                  title: str(`Seeded job ${start + i + 1}`),
+                  customerName: str('Measurement Ltd'),
+                  siteAddress: str(`${start + i + 1} Test Street`),
+                  description: str('Seeded for reconciliation timing.'),
+                  notes: str(''),
+                  status: str('scheduled'),
+                  priority: str('normal'),
+                  dueDate: { nullValue: null },
+                },
+              },
+            },
+          },
+        },
+        updateTransforms: [{ fieldPath: 'updatedAt', setToServerValue: 'REQUEST_TIME' }],
+      }
+    })
+    const res = await fetch(`${FIRESTORE_EMULATOR}/v1/${base}:commit`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ writes }),
+    })
+    if (!res.ok) throw new Error(`Seeding failed: ${res.status} ${await res.text()}`)
+  }
+}

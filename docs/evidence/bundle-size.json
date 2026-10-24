@@ -1,0 +1,101 @@
+{
+  "measuredAt": "2026-10-24T10:59:34.027Z",
+  "buildDir": "dist",
+  "totals": {
+    "appJs": {
+      "raw": 858830,
+      "gzip": 270874
+    },
+    "serviceWorker": {
+      "file": "sw.js",
+      "raw": 70559,
+      "gzip": 21861
+    },
+    "css": {
+      "raw": 6614,
+      "gzip": 2392
+    }
+  },
+  "files": [
+    {
+      "file": "assets/index.esm-D7JB1wSi.js",
+      "raw": 596074,
+      "gzip": 180521
+    },
+    {
+      "file": "assets/index-y6TCbA6R.js",
+      "raw": 145816,
+      "gzip": 47442
+    },
+    {
+      "file": "sw.js",
+      "raw": 70559,
+      "gzip": 21861
+    },
+    {
+      "file": "assets/_plugin-vue_export-helper-1GW3gTje.js",
+      "raw": 57714,
+      "gzip": 22404
+    },
+    {
+      "file": "assets/notifications-FGrM6BJ2.js",
+      "raw": 28858,
+      "gzip": 8786
+    },
+    {
+      "file": "assets/SyncView-D6CbBIco.js",
+      "raw": 8689,
+      "gzip": 3285
+    },
+    {
+      "file": "assets/SettingsView-BuqXOPcN.js",
+      "raw": 8563,
+      "gzip": 3276
+    },
+    {
+      "file": "assets/JobEditorView-DPO6P5cL.js",
+      "raw": 7093,
+      "gzip": 2673
+    },
+    {
+      "file": "assets/index-B_cY8G8s.css",
+      "raw": 6284,
+      "gzip": 2094
+    },
+    {
+      "file": "assets/workbox-window.prod.es5-Bd17z0YL.js",
+      "raw": 5653,
+      "gzip": 2199
+    },
+    {
+      "file": "index.html",
+      "raw": 1410,
+      "gzip": 730
+    },
+    {
+      "file": "manifest.webmanifest",
+      "raw": 560,
+      "gzip": 301
+    },
+    {
+      "file": "assets/NotFoundView-DAzMN1gU.js",
+      "raw": 370,
+      "gzip": 288
+    },
+    {
+      "file": "assets/SyncView-C-G2Zy2_.css",
+      "raw": 191,
+      "gzip": 138
+    },
+    {
+      "file": "assets/SettingsView-DDOEsQpl.css",
+      "raw": 96,
+      "gzip": 97
+    },
+    {
+      "file": "assets/JobEditorView-Cwklx0_T.css",
+      "raw": 43,
+      "gzip": 63
+    }
+  ]
+}

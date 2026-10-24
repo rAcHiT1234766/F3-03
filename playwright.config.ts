@@ -32,7 +32,8 @@ export default defineConfig({
     {
       command: 'node tests/e2e/static-server.mjs dist-e2e',
       url: 'http://127.0.0.1:4173/',
-      reuseExistingServer: false,
+      // Safe to reuse locally: the server re-reads files on every request.
+      reuseExistingServer: !process.env.CI,
     },
   ],
 })

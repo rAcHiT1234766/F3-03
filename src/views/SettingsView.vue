@@ -19,7 +19,7 @@ import {
   offlineReady,
   promptInstall,
 } from '../pwa'
-import { announce, pluralize } from '../ui'
+import { pluralize } from '../ui'
 
 const s = requireSession()
 const services = getServices()!
@@ -49,9 +49,9 @@ async function refreshStorage() {
   storage.value = { usage, quota, persisted }
 }
 
+/** Shown in the page's role="status" banner, which announces it. */
 function say(text: string) {
   message.value = text
-  announce(text)
 }
 
 async function guarded(action: () => Promise<void>) {

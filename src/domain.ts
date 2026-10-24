@@ -321,10 +321,6 @@ export function diffFields(
   return { patch, baseValues }
 }
 
-export function sameFields(a: JobFields, b: JobFields): boolean {
-  return FIELD_KEYS.every((k) => a[k] === b[k])
-}
-
 /** Key-order independent serialization, used to compare small immutable requests. */
 export function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`

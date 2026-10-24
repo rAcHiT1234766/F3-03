@@ -1,9 +1,11 @@
-// Minimal static server for browser tests. Serves a build directory with SPA fallback and reads
-// files on every request, so a test can swap in a newer build on the same origin (update test).
+// Minimal static server for browser tests and local Lighthouse runs. Serves a build directory with
+// SPA fallback and reads files on every request, so a test can swap in a newer build on the same
+// origin (update test). Text responses are gzip-compressed, as Firebase Hosting does.
 // Test-only: GET /__test/serve?dir=<build dir> switches the served directory.
 import { readFile, stat } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import path from 'node:path'
+import { gzipSync } from 'node:zlib'
 
 const port = Number(process.env.PORT ?? 4173)
 let root = path.resolve(process.argv[2] ?? 'dist-e2e')
@@ -47,9 +49,16 @@ createServer(async (req, res) => {
     }
     file = path.join(root, 'index.html')
   }
-  res.writeHead(200, {
-    'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream',
-    'Cache-Control': 'no-cache',
-  })
-  res.end(await readFile(file))
+  const type = TYPES[path.extname(file)] ?? 'application/octet-stream'
+  let body = await readFile(file)
+  const headers = { 'Content-Type': type, 'Cache-Control': 'no-cache', Vary: 'Accept-Encoding' }
+  if (
+    /^(text|application\/(json|manifest))/.test(type) &&
+    /\bgzip\b/.test(req.headers['accept-encoding'] ?? '')
+  ) {
+    body = gzipSync(body)
+    headers['Content-Encoding'] = 'gzip'
+  }
+  res.writeHead(200, headers)
+  res.end(body)
 }).listen(port, '127.0.0.1', () => console.log(`static server on http://127.0.0.1:${port}`))
