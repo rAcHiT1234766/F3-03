@@ -1,23 +1,15 @@
 <script setup lang="ts">
 import {
   Check,
+  ChevronDown,
   CircleAlert,
   CircleCheck,
-  Clock,
-  CloudAlert,
-  CloudCheck,
-  CloudOff,
   CloudUpload,
-  Download,
-  GitMerge,
   Info,
-  ListTodo,
   LoaderCircle,
   RefreshCw,
   RotateCw,
-  Trash,
   Undo2,
-  Upload,
 } from '@lucide/vue'
 import { computed, ref, type Component } from 'vue'
 import { useRouter } from 'vue-router'
@@ -74,14 +66,6 @@ const tone = computed<Tone>(() => {
   if (status.phase === 'idle') return 'ok'
   return 'danger'
 })
-const toneIcon = computed<Component>(() => {
-  if (tone.value === 'busy') return RefreshCw
-  if (!online.value || status.phase === 'offline') return CloudOff
-  if (status.phase === 'unreachable') return CloudAlert
-  if (tone.value === 'danger') return CircleAlert
-  return CloudCheck
-})
-
 /** Plain-language explanation of the phase; raw errors live under "Technical details". */
 const help = computed(() => {
   if (!online.value && status.phase !== 'syncing')
@@ -103,6 +87,11 @@ const help = computed(() => {
       return 'Changes you make are saved on this device first and upload automatically.'
   }
 })
+
+/** Queue position, printed like a docket number. */
+function position(index: number): string {
+  return String(index + 1).padStart(2, '0')
+}
 
 function titleFor(jobId: string, fallback?: string): string {
   return overview.value.jobs.get(jobId)?.view.fields.title ?? fallback ?? 'Unknown job'
@@ -221,29 +210,36 @@ async function discardDeleted(c: ConflictNotice) {
   <div class="page">
     <div class="page-head">
       <div>
+        <p class="eyebrow">This device</p>
         <h1>Sync center</h1>
         <p class="page-sub">What this device has uploaded, what is waiting, and what needs you.</p>
       </div>
-      <button class="btn btn-primary" type="button" :disabled="status.running" @click="syncNow">
+      <button
+        class="btn btn-primary sync-now"
+        type="button"
+        :disabled="status.running"
+        @click="syncNow"
+      >
         <RefreshCw :size="18" :class="{ spin: status.running }" />
         {{ status.running ? 'Syncing…' : 'Sync now' }}
       </button>
     </div>
 
-    <section class="card status-card" :class="`tone-${tone}`" aria-labelledby="status-h">
-      <div class="status-hero">
-        <div class="status-icon">
-          <component :is="toneIcon" :size="26" :class="{ spin: tone === 'busy' }" />
-        </div>
-        <div class="status-main">
-          <h2 id="status-h" class="eyebrow">Status</h2>
-          <p data-testid="sync-phase" class="phase">
-            <strong>{{ phaseMessage(status.phase, online) }}</strong>
-            <template v-if="status.stalled">
-              — the server is taking a long time to answer. You can keep working.</template
-            >
-          </p>
-          <p class="help">{{ help }}</p>
+    <section class="card readout" :class="`tone-${tone}`" aria-labelledby="status-h">
+      <!-- The readout: the same lamp as the app bar, at full size. -->
+      <div class="readout-panel">
+        <h2 id="status-h" class="readout-label"><span class="lamp" aria-hidden="true" />Status</h2>
+        <p data-testid="sync-phase" class="phase">
+          {{ phaseMessage(status.phase, online)
+          }}<span v-if="status.stalled" class="stalled">
+            — the server is taking a long time to answer. You can keep working.</span
+          >
+        </p>
+        <p class="help">{{ help }}</p>
+      </div>
+
+      <div class="readout-body">
+        <div class="readout-summary">
           <p data-testid="pending-count" class="pending" :class="{ none: pendingCount === 0 }">
             {{
               pendingCount === 0
@@ -255,37 +251,37 @@ async function discardDeleted(c: ConflictNotice) {
             <CircleCheck :size="16" />Up to date as of {{ formatDateTime(overview.lastPullAt) }}.
           </p>
         </div>
-      </div>
 
-      <dl class="stats">
-        <div class="stat">
-          <dt><Download :size="15" />Last server check</dt>
-          <dd data-testid="last-pull">{{ formatDateTime(overview.lastPullAt) }}</dd>
-        </div>
-        <div class="stat">
-          <dt><Upload :size="15" />Last upload</dt>
-          <dd>{{ formatDateTime(overview.lastPushAt) }}</dd>
-        </div>
-      </dl>
-      <details v-if="status.lastError && status.phase !== 'idle'" class="tech">
-        <summary>Technical details</summary>
-        <p class="small muted">{{ status.lastError }}</p>
-      </details>
-      <p class="hint note">
-        <Info :size="15" />
-        <span
-          >“No changes waiting” only covers this device's uploads. Changes made on other devices
-          arrive at the next successful server check.</span
-        >
-      </p>
-      <p v-if="message" class="banner" role="status">
-        <Info :size="18" /><span class="banner-body">{{ message }}</span>
-      </p>
+        <dl class="stats">
+          <div>
+            <dt>Last server check</dt>
+            <dd data-testid="last-pull">{{ formatDateTime(overview.lastPullAt) }}</dd>
+          </div>
+          <div>
+            <dt>Last upload</dt>
+            <dd>{{ formatDateTime(overview.lastPushAt) }}</dd>
+          </div>
+        </dl>
+        <details v-if="status.lastError && status.phase !== 'idle'" class="tech">
+          <summary><ChevronDown :size="16" class="caret" />Technical details</summary>
+          <p>{{ status.lastError }}</p>
+        </details>
+        <p class="hint note">
+          <Info :size="15" />
+          <span
+            >“No changes waiting” only covers this device's uploads. Changes made on other devices
+            arrive at the next successful server check.</span
+          >
+        </p>
+        <p v-if="message" class="banner" role="status">
+          <Info :size="18" /><span class="banner-body">{{ message }}</span>
+        </p>
+      </div>
     </section>
 
     <section v-if="deletedNotices.length" class="card attention" aria-labelledby="deleted-h">
-      <h2 id="deleted-h" class="section-title"><Trash :size="18" />Deleted on another device</h2>
-      <ul class="plain stack">
+      <h2 id="deleted-h" class="section-title">Deleted on another device</h2>
+      <ul class="plain">
         <li v-for="c in deletedNotices" :key="c.id" class="notice">
           <p>
             <strong>{{ c.retained?.title }}</strong> was deleted on another device; your local edits
@@ -309,25 +305,25 @@ async function discardDeleted(c: ConflictNotice) {
 
     <section v-if="fieldConflicts.length" class="card" aria-labelledby="conflicts-h">
       <h2 id="conflicts-h" class="section-title">
-        <GitMerge :size="18" />Conflicting edits resolved
-        <span class="badge badge-warn num">{{ fieldConflicts.length }}</span>
+        Conflicting edits resolved
+        <span class="count-tag">{{ fieldConflicts.length }}</span>
       </h2>
       <p class="small muted">
         Two devices changed the same field. The change that reached the server last was kept. These
         values are what happened at that time; the job may have changed again since.
       </p>
-      <ul class="plain stack">
+      <ul class="plain">
         <li v-for="c in fieldConflicts" :key="c.id" class="notice conflict" data-testid="conflict">
           <p class="conflict-head">
             <strong>{{ titleFor(c.jobId) }}</strong>
-            <span class="badge">{{ c.field ? FIELD_LABELS[c.field] : '' }}</span>
+            <span class="field-tag">{{ c.field ? FIELD_LABELS[c.field] : '' }}</span>
           </p>
           <div class="compare">
             <div class="side" :class="{ kept: c.chosen === c.incoming }">
               <p class="side-label">
                 This change
-                <span v-if="c.chosen === c.incoming" class="badge badge-ok kept-badge"
-                  ><Check :size="13" />Kept then</span
+                <span v-if="c.chosen === c.incoming" class="kept-stamp"
+                  ><Check :size="12" :stroke-width="3" />Kept then</span
                 >
               </p>
               <p class="side-value">{{ show(c.incoming, c.field) }}</p>
@@ -335,8 +331,8 @@ async function discardDeleted(c: ConflictNotice) {
             <div class="side" :class="{ kept: c.chosen === c.remote }">
               <p class="side-label">
                 Other device
-                <span v-if="c.chosen === c.remote" class="badge badge-ok kept-badge"
-                  ><Check :size="13" />Kept then</span
+                <span v-if="c.chosen === c.remote" class="kept-stamp"
+                  ><Check :size="12" :stroke-width="3" />Kept then</span
                 >
               </p>
               <p class="side-value">{{ show(c.remote, c.field) }}</p>
@@ -379,28 +375,22 @@ async function discardDeleted(c: ConflictNotice) {
 
     <section class="card" aria-labelledby="queue-h">
       <h2 id="queue-h" class="section-title">
-        <ListTodo :size="18" />Changes waiting to sync
-        <span v-if="overview.outbox.length" class="badge num">{{ overview.outbox.length }}</span>
+        Changes waiting to sync
+        <span v-if="overview.outbox.length" class="count-tag">{{ overview.outbox.length }}</span>
       </h2>
-      <div v-if="!overview.outbox.length" class="queue-empty">
-        <CircleCheck :size="20" />
-        <p class="muted">Nothing waiting.</p>
-      </div>
+      <p v-if="!overview.outbox.length" class="queue-empty">
+        <CircleCheck :size="18" />Nothing waiting.
+      </p>
+      <!-- The queue uploads top to bottom, one change after another. -->
       <ol v-else class="plain queue" data-testid="outbox">
         <li
-          v-for="row in overview.outbox"
+          v-for="(row, index) in overview.outbox"
           :key="row.sequence"
           class="op"
           :class="`op-${row.state}`"
           :data-state="row.state"
         >
-          <span class="op-dot">
-            <component
-              :is="STATE_ICONS[row.state]"
-              :size="16"
-              :class="{ spin: row.state === 'sending' }"
-            />
-          </span>
+          <span class="op-num" aria-hidden="true">{{ position(index) }}</span>
           <div class="op-body">
             <div class="op-head">
               <strong>{{ titleFor(row.payload.jobId, row.payload.after.title) }}</strong>
@@ -409,19 +399,23 @@ async function discardDeleted(c: ConflictNotice) {
                 :class="{
                   'badge-danger': row.state === 'blocked',
                   'badge-warn': row.state === 'retry_wait',
-                  'badge-info': row.state === 'sending',
+                  'badge-info': row.state === 'sending' || row.state === 'pending',
                 }"
               >
-                {{ STATE_LABELS[row.state] }}
+                <component
+                  :is="STATE_ICONS[row.state]"
+                  :size="13"
+                  :class="{ spin: row.state === 'sending' }"
+                />{{ STATE_LABELS[row.state] }}
               </span>
             </div>
-            <p class="small muted op-meta">
+            <p class="op-meta">
               {{ describeOp(row) }} · saved {{ formatDateTime(row.payload.clientCreatedAt) }}
               <template v-if="row.attempts"> · {{ pluralize(row.attempts, 'attempt') }}</template>
             </p>
             <p v-if="row.lastErrorCode" class="small op-error">
               {{ describeErrorCode(row.lastErrorCode) }}
-              <span class="muted">({{ row.lastErrorCode }})</span>
+              <span class="code">({{ row.lastErrorCode }})</span>
             </p>
             <p v-if="row.state === 'retry_wait' && row.nextAttemptAt" class="small muted">
               Next attempt around {{ formatDateTime(row.nextAttemptAt) }}.
@@ -458,8 +452,8 @@ async function discardDeleted(c: ConflictNotice) {
 
     <details v-if="history.length" class="card history">
       <summary>
-        <Clock :size="18" />Earlier conflict outcomes
-        <span class="badge num">{{ history.length }}</span>
+        <ChevronDown :size="18" class="caret" />Earlier conflict outcomes
+        <span class="count-tag">{{ history.length }}</span>
       </summary>
       <ul class="small">
         <li v-for="c in history" :key="c.id">
@@ -473,71 +467,133 @@ async function discardDeleted(c: ConflictNotice) {
 </template>
 
 <style scoped>
-.status-card {
-  --tone: var(--ok);
-  --tone-soft: var(--ok-soft);
-  border-top: 4px solid var(--tone);
+.sync-now :deep(svg) {
+  transition: transform var(--dur-3) var(--ease-out);
+}
+
+.sync-now:hover:not(:disabled) :deep(svg) {
+  transform: rotate(180deg);
+}
+
+/* ---------- Readout ---------- */
+
+.readout {
+  --lamp: #7ed29b;
+  overflow: hidden;
+  padding: 0;
 }
 
 .tone-busy {
-  --tone: var(--info);
-  --tone-soft: var(--info-soft);
+  --lamp: #97b3ff;
 }
 
 .tone-warn {
-  --tone: var(--warn);
-  --tone-soft: var(--warn-soft);
+  --lamp: #f2c063;
 }
 
 .tone-danger {
-  --tone: var(--danger);
-  --tone-soft: var(--danger-soft);
+  --lamp: #ff8a7e;
 }
 
-.status-hero {
+/* An instrument panel in app-bar ink, whatever the theme. */
+.readout-panel {
+  --focus: var(--header-text);
+  position: relative;
+  isolation: isolate;
+  padding: 1.25rem 1.5rem 1.35rem;
+  border-top: 3px solid var(--lamp);
+  background: var(--header);
+  color: var(--header-text);
+  transition: border-color var(--dur-3) var(--ease);
+}
+
+/* The sign-in cover's grid paper, fading out before it reaches the words. */
+.readout-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgb(242 241 236 / 5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(242 241 236 / 5%) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+  mask-image: linear-gradient(to left, #000, transparent 65%);
+  pointer-events: none;
+}
+
+.readout-label {
   display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.status-icon {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 14px;
-  background: var(--tone-soft);
-  color: var(--tone);
-}
-
-.status-main {
-  min-width: 0;
-}
-
-.eyebrow {
-  margin: 0 0 0.15rem;
-  color: var(--text-2);
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.6rem;
+  color: var(--header-text-2);
+  font-family: var(--mono);
   font-size: 0.75rem;
-  font-weight: 650;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
+.lamp {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--lamp);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lamp) 22%, transparent);
+  transition: background-color var(--dur-3) var(--ease);
+}
+
+.tone-busy .lamp {
+  animation: pulse 1.1s var(--ease) infinite;
+}
+
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--lamp) 0%, transparent);
+  }
+}
+
 .phase {
-  margin: 0 0 0.3rem;
-  font-size: 1.1875rem;
-  line-height: 1.35;
+  margin: 0 0 0.45rem;
+  font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+  font-weight: 700;
+  font-stretch: var(--condensed);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+
+.stalled {
+  font-size: 1rem;
+  font-weight: 500;
+  font-stretch: 100%;
+  letter-spacing: 0;
+  color: var(--header-text-2);
 }
 
 .help {
-  margin: 0 0 0.6rem;
-  color: var(--text-2);
+  max-width: 62ch;
+  margin: 0;
+  color: var(--header-text-2);
+}
+
+.readout-body {
+  padding: 1.15rem 1.5rem 1.35rem;
+}
+
+.readout-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1.5rem;
 }
 
 .pending {
   margin: 0;
-  font-weight: 600;
+  font-size: 1.0625rem;
+  font-weight: 650;
 }
 
 .pending.none {
@@ -549,38 +605,43 @@ async function discardDeleted(c: ConflictNotice) {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 0.5rem 0 0;
+  margin: 0;
   color: var(--ok);
-  font-weight: 600;
   font-size: 0.9375rem;
+  font-weight: 600;
 }
 
+/* Two readings side by side, ruled like a log. */
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 0.75rem;
-  margin: 1.25rem 0 0;
+  margin: 1rem 0 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
-.stat {
-  padding: 0.75rem 0.9rem;
-  border-radius: var(--radius);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+.stats > div {
+  padding: 0.7rem 0;
 }
 
-.stat dt {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-2);
-  font-size: 0.8125rem;
+.stats > div + div {
+  padding-left: 1.25rem;
+  border-left: 1px solid var(--border);
+}
+
+.stats dt {
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.stat dd {
+.stats dd {
   margin: 0.2rem 0 0;
-  font-weight: 600;
+  font-family: var(--mono);
+  font-size: 0.9375rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -589,14 +650,41 @@ async function discardDeleted(c: ConflictNotice) {
   font-size: 0.875rem;
 }
 
-.tech summary {
+.tech summary,
+.history summary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   cursor: pointer;
+  list-style: none;
+}
+
+.tech summary::-webkit-details-marker,
+.history summary::-webkit-details-marker {
+  display: none;
+}
+
+.tech summary {
   color: var(--text-2);
   font-weight: 600;
 }
 
+.caret {
+  color: var(--text-3);
+  transform: rotate(-90deg);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+details[open] > summary .caret {
+  transform: none;
+}
+
 .tech p {
-  margin: 0.4rem 0 0;
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
   font-family: var(--mono);
   font-size: 0.8125rem;
   overflow-wrap: anywhere;
@@ -604,7 +692,7 @@ async function discardDeleted(c: ConflictNotice) {
 
 .note {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.45rem;
   margin-top: 0.9rem;
 }
 
@@ -613,23 +701,31 @@ async function discardDeleted(c: ConflictNotice) {
   color: var(--text-3);
 }
 
-.attention {
-  border-color: color-mix(in srgb, var(--warn) 45%, var(--border));
-  background: linear-gradient(var(--warn-soft), var(--surface) 5rem);
+.readout-body .banner {
+  margin-bottom: 0;
 }
 
-.section-title .badge {
-  margin-left: 0.15rem;
+/* ---------- Notices ---------- */
+
+.attention {
+  border-color: color-mix(in srgb, var(--warn) 50%, var(--border));
+  border-top: 3px solid var(--warn);
+}
+
+.section-title .count-tag {
+  margin-left: 0.1rem;
 }
 
 .notice {
-  border-top: 1px solid var(--border);
+  border-top: 1px dashed var(--border);
   padding-top: 1rem;
+  margin-top: 1rem;
 }
 
 .notice:first-child {
   border-top: 0;
   padding-top: 0;
+  margin-top: 0;
 }
 
 .notice p {
@@ -643,6 +739,19 @@ async function discardDeleted(c: ConflictNotice) {
   gap: 0.5rem;
 }
 
+.field-tag {
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Two carbon copies of the same field; the one the server kept carries a stamp. */
 .compare {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
@@ -651,15 +760,15 @@ async function discardDeleted(c: ConflictNotice) {
 }
 
 .side {
-  padding: 0.7rem 0.85rem;
+  padding: 0.7rem 0.85rem 0.8rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
 }
 
 .side.kept {
-  border-color: color-mix(in srgb, var(--ok) 45%, var(--border));
-  background: var(--ok-soft);
+  border-color: color-mix(in srgb, var(--ok) 55%, var(--border));
+  background: color-mix(in srgb, var(--ok) 5%, var(--surface));
 }
 
 .side-label {
@@ -668,15 +777,24 @@ async function discardDeleted(c: ConflictNotice) {
   align-items: center;
   justify-content: space-between;
   gap: 0.4rem;
-  margin: 0 0 0.3rem;
+  margin: 0 0 0.35rem;
   color: var(--text-2);
-  font-size: 0.8125rem;
-  font-weight: 650;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.kept-badge {
-  font-size: 0.75rem;
-  padding: 0.05rem 0.45rem;
+.kept-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.05rem 0.4rem;
+  border: 1.5px solid var(--ok);
+  border-radius: var(--radius-xs);
+  color: var(--ok);
+  transform: rotate(-2deg);
 }
 
 .side-value {
@@ -689,65 +807,79 @@ async function discardDeleted(c: ConflictNotice) {
   margin-bottom: 0.75rem;
 }
 
+/* ---------- Queue ---------- */
+
 .queue-empty {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin: 0;
+  color: var(--text-2);
+}
+
+.queue-empty svg {
   color: var(--ok);
 }
 
-.queue-empty p {
-  margin: 0;
-}
-
 .queue {
-  position: relative;
   display: grid;
-  gap: 0;
 }
 
+/* Numbered stops on a rail: the order in which changes upload. */
 .op {
   position: relative;
-  display: flex;
-  gap: 0.85rem;
-  padding: 0.25rem 0 1rem;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 0.9rem;
+  padding-bottom: 1.1rem;
+  animation: settle var(--dur-3) var(--ease-out) backwards;
+}
+
+.op:last-child {
+  padding-bottom: 0;
 }
 
 .op:not(:last-child)::before {
   content: '';
   position: absolute;
-  left: 0.95rem;
+  left: calc(1.125rem - 1px);
   top: 2.25rem;
-  bottom: 0.25rem;
+  bottom: 0;
   width: 2px;
-  background: var(--border);
+  background: repeating-linear-gradient(var(--border-strong) 0 4px, transparent 4px 8px);
 }
 
-.op-dot {
+.op-num {
+  --tone: var(--info);
   display: grid;
   place-items: center;
-  flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 999px;
-  background: var(--info-soft);
-  color: var(--info);
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1.5px solid var(--tone);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--tone);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
-.op-retry_wait .op-dot {
-  background: var(--warn-soft);
-  color: var(--warn);
+.op-sending .op-num {
+  background: var(--tone);
+  color: var(--on-tone);
 }
 
-.op-blocked .op-dot {
-  background: var(--danger-soft);
-  color: var(--danger);
+.op-retry_wait .op-num {
+  --tone: var(--warn);
+}
+
+.op-blocked .op-num {
+  --tone: var(--danger);
 }
 
 .op-body {
-  flex: 1;
   min-width: 0;
-  padding-top: 0.2rem;
+  padding-top: 0.3rem;
 }
 
 .op-head {
@@ -765,24 +897,29 @@ async function discardDeleted(c: ConflictNotice) {
   margin: 0.25rem 0 0;
 }
 
+.op-meta {
+  color: var(--text-2);
+  font-size: 0.875rem;
+}
+
 .op-error {
   color: var(--danger);
+}
+
+.code {
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
 }
 
 .op-body .row {
   margin-top: 0.6rem;
 }
 
-.history summary {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  cursor: pointer;
-  font-weight: 650;
-}
+/* ---------- History ---------- */
 
-.history summary svg {
-  color: var(--text-3);
+.history summary {
+  font-weight: 650;
 }
 
 .history ul {
@@ -791,13 +928,31 @@ async function discardDeleted(c: ConflictNotice) {
 }
 
 @media (max-width: 640px) {
-  .status-icon {
-    width: 2.75rem;
-    height: 2.75rem;
+  .readout-panel,
+  .readout-body {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 
-  .phase {
-    font-size: 1.0625rem;
+  .stats > div + div {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
+
+@media (forced-colors: active) {
+  .lamp {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+  }
+
+  .readout-panel {
+    border-top-color: CanvasText;
+  }
+
+  .readout-panel::before {
+    display: none;
   }
 }
 </style>

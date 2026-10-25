@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Info, TriangleAlert } from '@lucide/vue'
+import { TriangleAlert } from '@lucide/vue'
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { confirmRequest, registerDialogHost } from '../dialog'
 
@@ -44,6 +44,7 @@ function onClick(event: MouseEvent) {
   <dialog
     ref="dialog"
     class="confirm"
+    :class="{ danger: confirmRequest?.danger }"
     aria-labelledby="confirm-title"
     aria-describedby="confirm-message"
     @cancel.prevent="settle(false)"
@@ -51,10 +52,11 @@ function onClick(event: MouseEvent) {
     @click="onClick"
   >
     <div v-if="confirmRequest" class="panel">
-      <div class="icon" :class="{ danger: confirmRequest.danger }">
-        <TriangleAlert v-if="confirmRequest.danger" :size="22" />
-        <Info v-else :size="22" />
-      </div>
+      <p class="kicker" aria-hidden="true">
+        <TriangleAlert v-if="confirmRequest.danger" :size="14" />{{
+          confirmRequest.danger ? 'Cannot be undone' : 'Please confirm'
+        }}
+      </p>
       <h2 id="confirm-title">{{ confirmRequest.title }}</h2>
       <p id="confirm-message">{{ confirmRequest.message }}</p>
       <div class="actions">
@@ -77,49 +79,60 @@ function onClick(event: MouseEvent) {
 
 <style scoped>
 .confirm {
-  width: min(28rem, calc(100% - 2rem));
+  --tone: var(--text);
+  width: min(29rem, calc(100% - 2rem));
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  border-top: 4px solid var(--tone);
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-lg);
 }
 
+.confirm.danger {
+  --tone: var(--danger);
+}
+
 .confirm[open] {
-  animation: pop 0.16s var(--ease);
+  animation: rise var(--dur-2) var(--ease-out);
+}
+
+.confirm[open]::backdrop {
+  animation: dim var(--dur-2) var(--ease);
 }
 
 .confirm::backdrop {
   background: var(--overlay);
-  backdrop-filter: blur(2px);
 }
 
 .panel {
-  padding: 1.5rem;
+  padding: 1.35rem 1.5rem 1.5rem;
 }
 
-.icon {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  margin-bottom: 1rem;
-  border-radius: 999px;
-  background: var(--info-soft);
-  color: var(--info);
-}
-
-.icon.danger {
-  background: var(--danger-soft);
-  color: var(--danger);
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+  color: var(--tone);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 h2 {
-  font-size: 1.1875rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-stretch: var(--condensed);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
 }
 
-p {
+#confirm-message {
   color: var(--text-2);
   white-space: pre-line;
 }
@@ -138,10 +151,15 @@ p {
   }
 }
 
-@keyframes pop {
+@keyframes rise {
+  from {
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+@keyframes dim {
   from {
     opacity: 0;
-    transform: translateY(6px) scale(0.98);
   }
 }
 </style>

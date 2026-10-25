@@ -80,6 +80,8 @@ emulator-mode production build. Reports: `docs/evidence/lighthouse/` (HTML and J
 | 4. Interface redesign, first build — mobile | 89 | 100 | 100 | 100 | 2.2 s | 3.0 s | 170 ms | 0 |
 | 5. Interface redesign, final — mobile | **92** | 100 | 100 | 100 | 2.4 s | 2.9 s | 0 ms | 0 |
 | 5. Interface redesign, final — desktop | **100** | 100 | 100 | 100 | 0.6 s | 0.6 s | 0 ms | 0 |
+| 6. Second redesign ("field job book") — mobile | 88 | 100 | 100 | 100 | 2.9 s | 3.2 s | 20 ms | 0 |
+| 6. Second redesign ("field job book") — desktop | **100** | 100 | 100 | 100 | 0.5 s | 0.7 s | 50 ms | 0.005 |
 
 What changed between runs:
 - **App fixes (1 → 2):** the layout shift came from the "ready to work offline" notice being
@@ -94,8 +96,16 @@ What changed between runs:
   back to back on the same machine, the previous design scored 93 twice, so the drop was real. Two
   causes were fixed: the UI font's preload competed with the JavaScript, and the bundler had merged
   Firebase into the entry chunk (longer start-up tasks). Final build: 91–92 over five runs, TBT
-  0–100 ms, CLS 0; the reports in `docs/evidence/lighthouse/` are run 5. Details:
-  `docs/decisions.md` § Interface design.
+  0–100 ms, CLS 0. Details: `docs/decisions.md` § Interface design.
+- **Second redesign (5 → 6):** 87–88 on mobile over the final build's three runs, 100 on desktop.
+  The new type (IBM Plex Sans variable and Plex Mono 400 and 600, 94 kB, in place of Inter's
+  48 kB) is requested by the app's first render. In Lighthouse's unthrottled trace that render
+  comes before the observed first paint, so the simulation charges the fonts to FCP (2.4 s →
+  2.9 s). The boot screen now uses system fonts only, so on a slow link the fonts load after the
+  JavaScript: with applied throttling (`--throttling-method=devtools`) the boot screen painted at
+  1.6 s and the first font request started at 3.4 s. Accessibility is back to 100 after a contrast
+  fix this run found (`docs/decisions.md` § Interface design). The reports in
+  `docs/evidence/lighthouse/` are run 6.
 
 A good Lighthouse score does not prove sync correctness; the T-series tests do.
 
@@ -108,40 +118,49 @@ Results: `docs/evidence/measurements.json`.
 
 | Metric | Median | Range | Runs | Method |
 |---|---|---|---|---|
-| Local save (Save → IndexedDB commit → job details shown) | 17 ms | 9.4–49.6 ms | 10 | Create via the form, Firestore unreachable |
-| Warm offline load (navigation → first job listed, 25 jobs) | 190 ms | 180–421 ms | 5 | Prepared profile, offline |
-| Queue drain, 20 operations | 1.87 s | 1.70–3.19 s | 3 | 2 jobs × (create + 9 status edits); varies from run to run |
-| First download, 50 jobs (sign-in submit → all listed) | 242 ms | 237–320 ms | 3 | Includes auth, database open, one full read (50 docs), local apply and rendering the list |
-| Repeat reconciliation, 50 jobs (nothing changed) | 54 ms | 51–80 ms | 3 | Sync now → Ready; 50 document reads |
-| First download, 200 jobs | 416 ms | 409–424 ms | 3 | 200 document reads |
-| Repeat reconciliation, 200 jobs | 85 ms | 82–88 ms | 3 | 200 document reads per reconciliation |
+| Local save (Save → IndexedDB commit → job details shown) | 8.1 ms | 7.0–20.4 ms | 10 | Create via the form, Firestore unreachable |
+| Warm offline load (navigation → first job listed, 25 jobs) | 164 ms | 144–232 ms | 5 | Prepared profile, offline |
+| Queue drain, 20 operations | 2.44 s | 2.21–3.31 s | 3 | 2 jobs × (create + 9 status edits); varies from run to run |
+| First download, 50 jobs (sign-in submit → all listed) | 236 ms | 215–240 ms | 3 | Includes auth, database open, one full read (50 docs), local apply and rendering the list |
+| Repeat reconciliation, 50 jobs (nothing changed) | 52 ms | 48–53 ms | 3 | Sync now → Ready; 50 document reads |
+| First download, 200 jobs | 331 ms | 316–332 ms | 3 | 200 document reads |
+| Repeat reconciliation, 200 jobs | 92 ms | 84–107 ms | 3 | 200 document reads per reconciliation |
 | Duplicate-effect count | 0 | — | — | T08, T09, T20, T21, T48: receipts = operations, one revision per change |
 | Disjoint-conflict preservation | 100 % | — | — | T26 in both orders (unit and emulator) |
 
-Initial goals from §22.3: local save "typically below 100 ms" was met (17 ms median); warm offline
-load "around 1 second" was met (0.19 s). Both are on this machine with emulators.
+Initial goals from §22.3: local save "typically below 100 ms" was met (8.1 ms median); warm offline
+load "around 1 second" was met (0.16 s). Both are on this machine with emulators.
 
-These figures are for the redesigned interface. Compared with the previous interface (warm offline
-load 182 ms, first download of 200 jobs 261 ms), rendering richer job cards costs a little: the
-first download of 200 jobs takes about 150 ms longer. A first re-measurement was slower still
-(warm load 276 ms, 200-job download 556 ms); creating an `Intl.DateTimeFormat` for every date was
-the main cost, and the formatters are now created once.
+These figures are for the second redesign (2026-10-25). The same machine drifts by tens of percent
+over a day, so the two designs were also compared in one session, alternating builds:
+- Full suite, previous design between two runs of the new one: first download of 200 jobs 624 ms
+  against 476 and 555 ms; repeat reconciliation of 200 jobs 146 ms against 174 and 195 ms; the
+  other metrics, apart from the warm offline load below, within run-to-run spread.
+- Warm offline load, official test, three alternating rounds: 160–217 ms (new) against 149–163 ms
+  (previous). A traced comparison that let the page settle before each reload (8 loads each)
+  found no difference, 126–141 ms against 136–157 ms, with the same main-thread work before the
+  first row (about 20 ms of script in both; style, layout and paint about 10 ms against 13 ms).
+  The cause of the gap in the official test was not isolated.
+
+The first redesign (checkpoint 3) found that creating an `Intl.DateTimeFormat` for every date was
+the main rendering cost of the list; formatters are created once.
 
 **Production bundle** (`dist/`, `node scripts/bundle-size.mjs`, `docs/evidence/bundle-size.json`):
 
 | Part | Raw | Gzip |
 |---|---|---|
 | Firebase chunk (`firebase-*.js`, Auth + Firestore) | 547.1 kB | 161.8 kB |
-| App entry (`index-*.js`, includes the icons used) | 167.9 kB | 55.6 kB |
-| Vue and Vue Router chunk (`vue-*.js`) | 89.9 kB | 34.3 kB |
+| App entry (`index-*.js`, includes the icons used) | 168.0 kB | 55.6 kB |
+| Vue and Vue Router chunk (`vue-*.js`) | 89.9 kB | 34.4 kB |
 | Notifications (lazy, includes Firebase Messaging) | 28.2 kB | 8.6 kB |
-| Lazy screens with their styles (editor, Sync center, Settings, 404) | 45.5 kB | 17.3 kB |
-| Service worker `sw.js` | 69.1 kB | 21.4 kB |
-| Main stylesheet | 30.3 kB | 7.0 kB |
-| UI font (Inter, Latin, WOFF2; precached, not on the first-visit critical path) | 48.3 kB | — |
+| Lazy screens with their styles (editor, Sync center, Settings, 404) | 49.8 kB | 17.8 kB |
+| Service worker `sw.js` | 69.6 kB | 21.7 kB |
+| Main stylesheet | 47.5 kB | 10.0 kB |
+| UI fonts (IBM Plex Sans variable 64.0 kB, Plex Mono 400 14.4 kB and 600 15.3 kB; Latin, WOFF2, precached) | 93.6 kB | — |
 
-Before the redesign the app JavaScript totalled 858.8 kB raw / 270.9 kB gzip and the CSS 6.6 kB /
-2.4 kB; it is now 876.2 kB / 277.1 kB and 37.2 kB / 9.2 kB.
+Before the first redesign the app JavaScript totalled 858.8 kB raw / 270.9 kB gzip and the CSS
+6.6 kB / 2.4 kB. After it: 876.2 kB / 277.1 kB and 37.2 kB / 9.2 kB, with a 48.3 kB font. After
+the second: 874.6 kB / 276.3 kB and 61.9 kB / 14.2 kB, with 93.6 kB of fonts.
 
 ## Known limitations and unresolved issues
 

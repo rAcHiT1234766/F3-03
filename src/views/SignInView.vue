@@ -1,21 +1,17 @@
 <script setup lang="ts">
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import {
+  ArrowRight,
   CircleAlert,
-  CloudOff,
   Eye,
   EyeOff,
   FlaskConical,
-  GitMerge,
   LoaderCircle,
-  MonitorSmartphone,
-  RefreshCw,
-  ShieldCheck,
   WifiOff,
 } from '@lucide/vue'
 import { ref } from 'vue'
 import { getServices, signIn } from '../auth'
-import BrandMark from '../components/BrandMark.vue'
+import SignalBars from '../components/SignalBars.vue'
 import { useOnline } from '../composables/useJobs'
 
 const email = ref('')
@@ -60,28 +56,26 @@ async function submit(create = false) {
 }
 </script>
 
+<!-- The form comes first in the document. On wide screens it sits beside an ink cover that runs
+     from the app bar to the bottom of the window, and stays in view while a cover taller than the
+     window scrolls; on phones the cover is a band above it. -->
 <template>
-  <div class="page signin-page">
-    <div class="signin-layout">
-      <div class="card signin">
+  <div class="signin-page">
+    <div class="form-column">
+      <div class="signin-form">
+        <p v-if="emulator" class="dev-tag">
+          <FlaskConical :size="14" />Emulator mode · demo data only
+        </p>
         <h1>Sign in to FieldLog</h1>
-        <p class="muted lead">
+        <p class="lead">
           Sign in once while online. After that, FieldLog keeps working on this device without a
-          connection: jobs already downloaded here and the changes you make are stored on the device
-          and sync when you are back online.
+          connection.
         </p>
         <p v-if="!online" class="banner banner-warn" role="status">
           <WifiOff :size="18" />
           <span class="banner-body"
             >You appear to be offline. Signing in for the first time needs a network
             connection.</span
-          >
-        </p>
-        <p v-if="emulator" class="banner small">
-          <FlaskConical :size="18" />
-          <span class="banner-body"
-            >Development mode: using the local Firebase emulators (demo project). No real data is
-            used.</span
           >
         </p>
         <form novalidate @submit.prevent="submit()">
@@ -126,12 +120,13 @@ async function submit(create = false) {
           </p>
           <div class="buttons">
             <button
-              class="btn btn-primary btn-block"
+              class="btn btn-primary btn-block submit"
               type="submit"
               :disabled="busy || !email || !password"
             >
               <LoaderCircle v-if="busy" :size="18" class="spin" />
               {{ busy ? 'Signing in…' : 'Sign in' }}
+              <ArrowRight v-if="!busy" :size="18" class="go" />
             </button>
             <button
               v-if="emulator"
@@ -144,37 +139,57 @@ async function submit(create = false) {
             </button>
           </div>
         </form>
+        <p class="no-account">
+          No account? Ask whoever manages FieldLog for your team to create one.
+        </p>
+      </div>
+    </div>
+
+    <div class="ink">
+      <div class="cover">
+        <p class="cover-eyebrow" aria-hidden="true">For field service teams</p>
+        <p class="statement">
+          <span class="line"><span>Job sheets that keep working</span></span>
+          <span class="line line-accent"><span>where the signal doesn’t.</span></span>
+        </p>
+        <!-- Decorative: the signal drops out, the work carries on, then it catches up. -->
+        <div class="readout" aria-hidden="true">
+          <SignalBars :size="44" motion="drop" />
+          <span class="readout-text">
+            <span class="readout-state state-synced">All changes synced</span>
+            <span class="readout-state state-offline">No signal · saved on this device</span>
+            <span class="readout-state state-back">Back online · syncing</span>
+          </span>
+        </div>
       </div>
 
-      <section class="intro" aria-labelledby="intro-h">
-        <BrandMark :size="44" />
-        <h2 id="intro-h" class="intro-title">Job tracking that keeps working without signal.</h2>
-        <ul class="plain features">
+      <section class="docket" aria-labelledby="docket-title">
+        <h2 id="docket-title" class="docket-title">How it works offline</h2>
+        <ol class="plain docket-list">
           <li>
-            <CloudOff :size="20" />
-            <span
-              ><strong>Works offline.</strong> View and update jobs in basements, plant rooms and
-              rural sites.</span
-            >
+            <span class="docket-num" aria-hidden="true">01</span>
+            <p>
+              <strong>No signal, no problem.</strong> Open and update jobs in basements, plant rooms
+              and rural sites.
+            </p>
           </li>
           <li>
-            <RefreshCw :size="20" />
-            <span
-              ><strong>Syncs when you are back.</strong> Changes upload in order, and each one is
-              applied exactly once.</span
-            >
+            <span class="docket-num" aria-hidden="true">02</span>
+            <p>
+              <strong>It catches up on its own.</strong> Changes upload in order once you are back
+              online, and each one is applied exactly once.
+            </p>
           </li>
           <li>
-            <GitMerge :size="20" />
-            <span
-              ><strong>Nothing silently lost.</strong> Edits from two devices are merged, and real
-              conflicts are shown to you.</span
-            >
+            <span class="docket-num" aria-hidden="true">03</span>
+            <p>
+              <strong>Nothing silently lost.</strong> Edits from two devices are merged, and real
+              conflicts are shown to you.
+            </p>
           </li>
-        </ul>
-        <p class="intro-foot">
-          <span><MonitorSmartphone :size="16" />Install it on a phone or desktop</span>
-          <span><ShieldCheck :size="16" />Each account's data kept separate</span>
+        </ol>
+        <p class="docket-foot">
+          Installs on a phone or desktop · Each account’s data is kept separate
         </p>
       </section>
     </div>
@@ -182,109 +197,331 @@ async function submit(create = false) {
 </template>
 
 <style scoped>
+/* ---------- Layout ---------- */
+
+/* Phones: an ink band above the form, then the docket on paper. */
 .signin-page {
-  padding-top: 2.5rem;
-}
-
-.signin-layout {
   display: grid;
-  gap: 1.5rem;
-  align-items: stretch;
+  grid-template-areas:
+    'cover'
+    'form'
+    'docket';
 }
 
-@media (min-width: 860px) {
-  .signin-layout {
-    grid-template-columns: 1fr minmax(24rem, 28rem);
-    gap: 2.5rem;
-  }
-
-  /* The form comes first in the document (and on phones); the intro sits on its left here. */
-  .intro {
-    order: -1;
-  }
+.ink {
+  display: contents;
 }
 
-.intro {
+/* The ink is a real background on the element that holds the words, so contrast checks can read
+   it. Layers behind stretch it to the window edges and lay grid paper over it; the app shell
+   clips what runs past the window. */
+.cover {
+  grid-area: cover;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 2.25rem;
-  border-radius: var(--radius-lg);
-  color: #f2fbf7;
-  background:
-    radial-gradient(circle at 85% 15%, rgb(255 255 255 / 14%), transparent 40%),
-    radial-gradient(circle at 10% 95%, rgb(82 199 164 / 35%), transparent 45%),
-    linear-gradient(150deg, #1f6f5c, #12483b 70%);
-  box-shadow: var(--shadow-lg);
+  isolation: isolate;
+  padding: 1.75rem 0 2rem;
+  background: var(--header);
+  color: var(--header-text);
 }
 
-.intro-foot {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
-  margin: auto 0 0;
-  padding-top: 2rem;
-  color: rgb(242 251 247 / 80%);
-  font-size: 0.875rem;
+.form-column {
+  grid-area: form;
 }
 
-.intro-foot span {
-  display: inline-flex;
+.signin-form {
+  width: 100%;
+  max-width: 28rem;
+  padding: 2rem 0 0.5rem;
+  animation: settle var(--dur-3) var(--ease-out) 120ms backwards;
+}
+
+.docket {
+  grid-area: docket;
+  --ink-text: var(--text);
+  --ink-text-2: var(--text-2);
+  --ink-rule: var(--border);
+  --num: var(--accent-ink);
+  margin-top: 2.25rem;
+  padding-bottom: 2.5rem;
+  color: var(--ink-text);
+}
+
+@media (max-width: 899px) {
+  .cover::before,
+  .cover::after {
+    content: '';
+    position: absolute;
+    inset: 0 -50vw;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .cover::before {
+    background: var(--header);
+  }
+
+  .cover::after {
+    background-image:
+      linear-gradient(rgb(242 241 236 / 5%) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(242 241 236 / 5%) 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: linear-gradient(170deg, #000 10%, transparent 75%);
+  }
+}
+
+/* Wide screens: the ink fills the left column from the app bar to the bottom of the window. */
+@media (min-width: 900px) {
+  .signin-page {
+    grid-template-columns: minmax(0, 1fr) minmax(22rem, 25rem);
+    grid-template-areas: 'ink form';
+    column-gap: clamp(3rem, 7vw, 6.5rem);
+    min-height: calc(100dvh - var(--header-h) - 1px);
+  }
+
+  .ink {
+    grid-area: ink;
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    padding-right: 3rem;
+    background: var(--header);
+    color: var(--header-text);
+  }
+
+  /* Past the bottom as well, so the ink still meets the window edge when a notice adds space
+     under the page. */
+  .ink::before,
+  .ink::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 -100vh -50vw;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* A hairline where the ink meets the paper keeps the edge crisp in the dark theme. */
+  .ink::before {
+    background: var(--header);
+    box-shadow: inset -1px 0 0 var(--header-border);
+  }
+
+  .ink::after {
+    background-image:
+      linear-gradient(rgb(242 241 236 / 5%) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(242 241 236 / 5%) 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: linear-gradient(170deg, #000 0, transparent 46rem);
+  }
+
+  .cover {
+    isolation: auto;
+    padding: clamp(2.5rem, 7vh, 4.5rem) 0 2.5rem;
+    background: none;
+  }
+
+  /* The form stays centred in the window below the app bar; only the cover moves when it is taller
+     than the window. At the end of the page the column follows the page, so a form taller than a
+     very short window can still be scrolled into view. */
+  .form-column {
+    position: sticky;
+    top: calc(var(--header-h) + 1px);
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: calc(100dvh - var(--header-h) - 1px);
+  }
+
+  .signin-form {
+    padding: clamp(1.5rem, 6vh, 3rem) 0;
+  }
+
+  .docket {
+    --ink-text: var(--header-text);
+    --ink-text-2: var(--header-text-2);
+    --ink-rule: rgb(242 241 236 / 13%);
+    --num: var(--accent);
+    margin-top: auto;
+    padding: 0 0 2.5rem;
+  }
+}
+
+/* ---------- Cover ---------- */
+
+.cover-eyebrow {
+  display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.65rem;
+  margin: 0 0 1.25rem;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.intro :deep(.brand-mark) {
-  border-radius: 12px;
-  box-shadow: 0 0 0 3px rgb(255 255 255 / 20%);
+.cover-eyebrow::before {
+  content: '';
+  width: 1.5rem;
+  height: 2px;
+  background: currentcolor;
 }
 
-.intro-title {
-  margin: 1.5rem 0 1.75rem;
-  max-width: 26rem;
-  font-size: clamp(1.45rem, 1.1rem + 1.2vw, 2rem);
+.statement {
+  max-width: 13em;
+  margin: 0;
+  font-size: clamp(2.125rem, 1.1rem + 3.4vw, 4rem);
   font-weight: 700;
-  line-height: 1.2;
+  font-stretch: var(--condensed);
+  line-height: 1;
   letter-spacing: -0.025em;
 }
 
-.features {
-  display: grid;
-  gap: 1.1rem;
-  max-width: 30rem;
+/* Each part rises out of its own line, the way a printed sheet slides out of a sleeve. */
+.line {
+  display: block;
+  overflow: hidden;
+  padding: 0.05em 0 0.14em;
+  margin: -0.05em 0 -0.14em;
 }
 
-.features li {
+.line > span {
+  display: block;
+  text-wrap: balance;
+  animation: reveal 760ms var(--ease-out) 80ms backwards;
+}
+
+.line-accent {
+  color: var(--accent);
+}
+
+.line-accent > span {
+  animation-delay: 190ms;
+}
+
+@keyframes reveal {
+  from {
+    transform: translateY(112%);
+  }
+}
+
+.readout {
   display: flex;
-  gap: 0.8rem;
-  line-height: 1.5;
-  color: rgb(242 251 247 / 88%);
+  align-items: flex-end;
+  gap: 1rem;
+  margin-top: clamp(2rem, 5vh, 3.25rem);
+  color: var(--accent);
 }
 
-.features strong {
-  color: #fff;
+.readout-text {
+  display: grid;
+  padding-bottom: 0.1rem;
+  color: var(--header-text-2);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.features svg {
-  margin-top: 0.15rem;
-  padding: 0.35rem;
-  box-sizing: content-box;
-  border-radius: 10px;
-  background: rgb(255 255 255 / 12%);
-  color: #fff;
+/* Three captions share one cell and take turns with the bars (7 s cycle, see SignalBars). */
+.readout-state {
+  grid-area: 1 / 1;
+  animation: 7s linear infinite;
 }
 
-.signin {
-  padding: 2rem;
+.state-synced {
+  animation-name: caption-synced;
 }
 
-.signin h1 {
-  font-size: 1.625rem;
+.state-offline {
+  visibility: hidden;
+  color: var(--header-text);
+  animation-name: caption-offline;
+}
+
+.state-back {
+  visibility: hidden;
+  animation-name: caption-back;
+}
+
+@keyframes caption-synced {
+  0%,
+  51.9% {
+    visibility: visible;
+  }
+
+  52%,
+  100% {
+    visibility: hidden;
+  }
+}
+
+@keyframes caption-offline {
+  0%,
+  51.9% {
+    visibility: hidden;
+  }
+
+  52%,
+  84.9% {
+    visibility: visible;
+  }
+
+  85%,
+  100% {
+    visibility: hidden;
+  }
+}
+
+@keyframes caption-back {
+  0%,
+  84.9% {
+    visibility: hidden;
+  }
+
+  85%,
+  100% {
+    visibility: visible;
+  }
+}
+
+/* ---------- Form ---------- */
+
+.dev-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 1.1rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin-bottom: 0.6rem;
+  font-size: clamp(2rem, 1.7rem + 1vw, 2.375rem);
 }
 
 .lead {
-  font-size: 0.9375rem;
+  margin-bottom: 1.6rem;
+  color: var(--text-2);
+}
+
+.signin-form .banner {
+  margin: -0.4rem 0 1.4rem;
+}
+
+.signin-form input:not([type='checkbox']) {
+  min-height: 3rem;
 }
 
 .password {
@@ -292,16 +529,16 @@ async function submit(create = false) {
 }
 
 .password input {
-  padding-right: 3rem;
+  padding-right: 3.25rem;
 }
 
 .reveal {
   position: absolute;
-  right: 0.25rem;
+  right: 0.3rem;
   top: 50%;
   transform: translateY(-50%);
-  min-height: 2.25rem;
-  min-width: 2.25rem;
+  min-height: 2.375rem;
+  min-width: 2.375rem;
   padding: 0.25rem;
   color: var(--text-2);
 }
@@ -310,49 +547,147 @@ async function submit(create = false) {
   transform: translateY(-50%);
 }
 
+.reveal[aria-pressed='true'] {
+  color: var(--text);
+}
+
 .form-error {
-  margin-bottom: 1rem;
-  padding: 0.6rem 0.75rem;
+  margin: 0 0 1.1rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--border));
+  border-left: 3px solid var(--danger);
   border-radius: var(--radius-sm);
   background: var(--danger-soft);
 }
 
 .buttons {
   display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.submit {
+  min-height: 3.125rem;
+  font-size: 1rem;
+}
+
+.go {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.submit:hover:not(:disabled) .go {
+  transform: translateX(3px);
+}
+
+.no-account {
+  margin: 1.75rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border-strong);
+  color: var(--text-2);
+  font-size: 0.875rem;
+}
+
+/* ---------- Docket ---------- */
+
+.docket-title {
+  display: flex;
+  align-items: center;
   gap: 0.6rem;
-  margin-top: 0.4rem;
+  margin: 0 0 0.25rem;
+  color: var(--ink-text-2);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.buttons .btn {
-  min-height: 2.875rem;
+.docket-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ink-rule);
 }
 
-@media (max-width: 859px) {
-  .signin-page {
-    padding-top: 1.25rem;
+.docket-list li {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 0.25rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--ink-rule);
+  animation: settle var(--dur-3) var(--ease-out) backwards;
+}
+
+.docket-list li:nth-child(1) {
+  animation-delay: 260ms;
+}
+
+.docket-list li:nth-child(2) {
+  animation-delay: 320ms;
+}
+
+.docket-list li:nth-child(3) {
+  animation-delay: 380ms;
+}
+
+.docket-num {
+  padding-top: 0.15rem;
+  color: var(--num);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.docket-list p {
+  max-width: 34rem;
+  margin: 0;
+  color: var(--ink-text-2);
+  font-size: 0.9375rem;
+}
+
+.docket-list strong {
+  color: var(--ink-text);
+  font-weight: 650;
+}
+
+.docket-foot {
+  margin: 1rem 0 0;
+  color: var(--ink-text-2);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---------- Phones ---------- */
+
+@media (max-width: 899px) {
+  .statement {
+    max-width: 11em;
   }
 
-  .intro {
-    padding: 1.5rem;
+  /* The bars move up beside the eyebrow; the captions stay with the wide layout. */
+  .readout {
+    position: absolute;
+    top: 1.5rem;
+    right: 0;
+    margin: 0;
   }
 
-  .intro-title {
-    margin: 1rem 0 1.25rem;
+  .readout :deep(.signal) {
+    width: 28px;
+    height: 28px;
   }
 
-  .signin {
-    padding: 1.5rem;
+  .readout-text {
+    display: none;
   }
 }
 
-@media (max-width: 640px) {
-  .features {
-    gap: 0.8rem;
-    font-size: 0.9375rem;
-  }
-
-  .signin {
-    padding: 1.25rem;
+@media (forced-colors: active) {
+  .cover::after,
+  .ink::after {
+    display: none;
   }
 }
 </style>

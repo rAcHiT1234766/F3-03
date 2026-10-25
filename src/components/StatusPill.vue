@@ -1,54 +1,47 @@
 <script setup lang="ts">
-import { CalendarClock, CircleCheck, Wrench } from '@lucide/vue'
-import type { Component } from 'vue'
 import { STATUS_LABELS, type JobStatus } from '../domain'
+import StatusDot from './StatusDot.vue'
 
 defineProps<{ status: JobStatus }>()
-
-const ICONS: Record<JobStatus, Component> = {
-  scheduled: CalendarClock,
-  in_progress: Wrench,
-  completed: CircleCheck,
-}
 </script>
 
+<!-- A status stamp: printed caps with a dot that fills as the job progresses. -->
 <template>
-  <span class="pill" :class="`pill-${status}`">
-    <component :is="ICONS[status]" :size="14" />{{ STATUS_LABELS[status] }}
+  <span class="stamp" :class="`stamp-${status}`">
+    <StatusDot :status="status" />{{ STATUS_LABELS[status] }}
   </span>
 </template>
 
 <style scoped>
-.pill {
+.stamp {
+  --tone: var(--st-scheduled);
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 650;
-  line-height: 1.35;
+  gap: 0.4rem;
+  padding: 0.2rem 0.5rem 0.2rem 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--tone) 42%, transparent);
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--tone) 7%, var(--surface));
+  color: var(--tone);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   white-space: nowrap;
-  border: 1px solid transparent;
 }
 
-.pill-scheduled {
-  background: var(--st-scheduled-soft);
-  color: var(--st-scheduled);
+.stamp-in_progress {
+  --tone: var(--st-progress);
 }
 
-.pill-in_progress {
-  background: var(--st-progress-soft);
-  color: var(--st-progress);
-}
-
-.pill-completed {
-  background: var(--st-done-soft);
-  color: var(--st-done);
+.stamp-completed {
+  --tone: var(--st-done);
 }
 
 @media (forced-colors: active) {
-  .pill {
+  .stamp {
     border-color: CanvasText;
   }
 }

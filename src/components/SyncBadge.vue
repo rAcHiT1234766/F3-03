@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CircleAlert, CircleCheck, CloudUpload, LoaderCircle, RotateCw } from '@lucide/vue'
+import { CircleAlert, Check, CloudUpload, LoaderCircle, RotateCw } from '@lucide/vue'
 import { computed, type Component } from 'vue'
 import { JOB_SYNC_LABELS, type JobSyncState } from '../ui'
 
@@ -7,7 +7,7 @@ const props = defineProps<{ state: JobSyncState; quiet?: boolean }>()
 
 // Icon + text, so the state never depends on color alone.
 const ICONS: Record<JobSyncState, Component> = {
-  synced: CircleCheck,
+  synced: Check,
   pending: CloudUpload,
   syncing: LoaderCircle,
   retrying: RotateCw,

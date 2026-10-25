@@ -1,24 +1,10 @@
 <script setup lang="ts">
-import {
-  Building,
-  CalendarClock,
-  CalendarDays,
-  ChevronLeft,
-  CircleAlert,
-  CircleCheck,
-  CloudOff,
-  Flag,
-  MapPin,
-  NotebookPen,
-  Pencil,
-  RefreshCw,
-  Trash,
-  Wrench,
-} from '@lucide/vue'
-import { computed, ref, type Component } from 'vue'
+import { ChevronLeft, CircleAlert, CloudOff, Flag, Pencil, RefreshCw, Trash } from '@lucide/vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { requireSession } from '../auth'
 import EmptyState from '../components/EmptyState.vue'
+import StatusDot from '../components/StatusDot.vue'
 import StatusPill from '../components/StatusPill.vue'
 import SyncBadge from '../components/SyncBadge.vue'
 import { useJob } from '../composables/useJobs'
@@ -31,6 +17,7 @@ import {
   describeDue,
   formatDateTime,
   formatDueDate,
+  jobRef,
   jobSyncState,
   pluralize,
 } from '../ui'
@@ -48,12 +35,7 @@ const syncState = computed(() => (job.value ? jobSyncState(job.value, data.value
 const due = computed(() =>
   fields.value ? describeDue(fields.value.dueDate, fields.value.status) : null,
 )
-
-const STATUS_ICONS: Record<JobStatus, Component> = {
-  scheduled: CalendarClock,
-  in_progress: Wrench,
-  completed: CircleCheck,
-}
+const statusIndex = computed(() => (fields.value ? JOB_STATUSES.indexOf(fields.value.status) : 0))
 
 async function setStatus(status: JobStatus) {
   if (!job.value || job.value.view.fields.status === status) return
@@ -125,19 +107,20 @@ async function remove() {
     </EmptyState>
 
     <template v-else-if="fields">
-      <header class="detail-head">
+      <header class="sheet-head">
         <div class="head-main">
-          <div class="row head-badges">
+          <p class="eyebrow">Job sheet · Ref {{ jobRef(id) }}</p>
+          <h1>{{ fields.title }}</h1>
+          <p class="head-line">
+            {{ fields.customerName
+            }}<template v-if="fields.siteAddress"> · {{ fields.siteAddress }}</template>
+          </p>
+          <div class="head-tags">
             <StatusPill :status="fields.status" />
             <SyncBadge :state="syncState" />
           </div>
-          <h1>{{ fields.title }}</h1>
-          <p class="head-line">
-            <span><Building :size="16" />{{ fields.customerName }}</span>
-            <span v-if="fields.siteAddress"><MapPin :size="16" />{{ fields.siteAddress }}</span>
-          </p>
         </div>
-        <div class="row head-actions">
+        <div class="head-actions">
           <RouterLink class="btn" :to="`/jobs/${id}/edit`"><Pencil :size="16" />Edit</RouterLink>
           <button class="btn btn-danger" type="button" @click="remove">
             <Trash :size="16" />Delete
@@ -149,32 +132,38 @@ async function remove() {
         <CircleAlert :size="18" /><span class="banner-body">{{ error }}</span>
       </p>
 
-      <div class="detail-grid">
-        <div class="detail-main">
-          <section class="card" aria-labelledby="progress-h">
+      <div class="sheet-grid">
+        <div class="sheet-main">
+          <section class="card" aria-labelledby="status-h">
             <div class="card-head">
-              <h2 id="progress-h">Progress</h2>
-              <span class="small muted">Saved on this device instantly</span>
+              <h2 id="status-h" class="section-title">Status</h2>
+              <span class="saved-note">Saved on this device instantly</span>
             </div>
-            <div class="status-switch" role="group" aria-label="Job status">
+            <!-- The pressed step sits on a block of its colour that slides between steps. -->
+            <div
+              class="stepper"
+              :class="`at-${fields.status}`"
+              :style="{ '--i': statusIndex }"
+              role="group"
+              aria-label="Job status"
+            >
+              <span class="stepper-thumb" aria-hidden="true" />
               <button
                 v-for="st in JOB_STATUSES"
                 :key="st"
                 type="button"
-                class="status-option"
-                :class="`opt-${st}`"
+                class="step"
                 :aria-pressed="fields.status === st"
                 :disabled="busy"
                 @click="setStatus(st)"
               >
-                <component :is="STATUS_ICONS[st]" :size="18" />
-                {{ STATUS_LABELS[st] }}
+                <StatusDot :status="st" :size="13" />{{ STATUS_LABELS[st] }}
               </button>
             </div>
           </section>
 
-          <section class="card" aria-labelledby="details-h">
-            <h2 id="details-h" class="section-title"><NotebookPen :size="18" />Details</h2>
+          <section class="card" aria-labelledby="work-h">
+            <h2 id="work-h" class="section-title">Work</h2>
             <h3 class="block-label">{{ FIELD_LABELS.description }}</h3>
             <p class="block-text" :class="{ empty: !fields.description }">
               {{ fields.description || 'No description.' }}
@@ -184,26 +173,28 @@ async function remove() {
           </section>
         </div>
 
-        <aside class="detail-side">
+        <aside class="sheet-side">
           <section class="card" aria-labelledby="info-h">
-            <h2 id="info-h">Job info</h2>
-            <dl class="info">
+            <h2 id="info-h" class="section-title">Job info</h2>
+            <dl class="facts">
               <div>
-                <dt><Building :size="16" />{{ FIELD_LABELS.customerName }}</dt>
+                <dt>{{ FIELD_LABELS.customerName }}</dt>
                 <dd>{{ fields.customerName }}</dd>
               </div>
               <div>
-                <dt><MapPin :size="16" />{{ FIELD_LABELS.siteAddress }}</dt>
+                <dt>{{ FIELD_LABELS.siteAddress }}</dt>
                 <dd>{{ fields.siteAddress || '—' }}</dd>
               </div>
               <div>
-                <dt><Flag :size="16" />{{ FIELD_LABELS.priority }}</dt>
-                <dd :class="{ high: fields.priority === 'high' }">
-                  {{ PRIORITY_LABELS[fields.priority] }}
+                <dt>{{ FIELD_LABELS.priority }}</dt>
+                <dd :class="`prio-${fields.priority}`">
+                  <Flag v-if="fields.priority === 'high'" :size="14" />{{
+                    PRIORITY_LABELS[fields.priority]
+                  }}
                 </dd>
               </div>
               <div>
-                <dt><CalendarDays :size="16" />{{ FIELD_LABELS.dueDate }}</dt>
+                <dt>{{ FIELD_LABELS.dueDate }}</dt>
                 <dd>
                   {{ formatDueDate(fields.dueDate) }}
                   <span
@@ -220,17 +211,28 @@ async function remove() {
           </section>
 
           <section class="card" aria-labelledby="sync-h">
-            <h2 id="sync-h" class="section-title"><RefreshCw :size="18" />Sync</h2>
-            <p v-if="data.ops.length" class="small">
-              {{ pluralize(data.ops.length, 'change') }} saved on this device and waiting to sync.
+            <h2 id="sync-h" class="section-title">Sync</h2>
+            <dl class="facts">
+              <div>
+                <dt>Server copy</dt>
+                <dd>
+                  <template v-if="job.shadow">Revision {{ job.shadow.revision }}</template>
+                  <template v-else>Not yet confirmed by the server</template>
+                </dd>
+              </div>
+              <div v-if="job.shadow">
+                <dt>Confirmed</dt>
+                <dd class="mono small">{{ formatDateTime(job.shadow.updatedAt) }}</dd>
+              </div>
+              <div>
+                <dt>Waiting</dt>
+                <dd :class="{ pending: data.ops.length }">
+                  {{ data.ops.length ? pluralize(data.ops.length, 'change') : 'Nothing to sync' }}
+                </dd>
+              </div>
+            </dl>
+            <p v-if="data.ops.length" class="small sync-link">
               <RouterLink to="/sync">See sync details</RouterLink>
-            </p>
-            <p class="muted small sync-note">
-              <template v-if="job.shadow">
-                Last confirmed by the server: revision {{ job.shadow.revision }},
-                {{ formatDateTime(job.shadow.updatedAt) }}.
-              </template>
-              <template v-else>Not yet confirmed by the server.</template>
             </p>
           </section>
         </aside>
@@ -240,13 +242,18 @@ async function remove() {
 </template>
 
 <style scoped>
-.detail-head {
+/* ---------- Head ---------- */
+
+/* The sheet's printed header: title block, then a heavy rule. */
+.sheet-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem 1.5rem;
   margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 2px solid var(--text);
 }
 
 .head-main {
@@ -254,118 +261,144 @@ async function remove() {
   flex: 1 1 24rem;
 }
 
-.head-badges {
-  margin-bottom: 0.6rem;
-}
-
-.detail-head h1 {
-  margin-bottom: 0.4rem;
+.sheet-head h1 {
+  margin-bottom: 0.45rem;
   overflow-wrap: anywhere;
 }
 
 .head-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 1.25rem;
   margin: 0;
   color: var(--text-2);
-}
-
-.head-line span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+  font-size: 1.0625rem;
   overflow-wrap: anywhere;
 }
 
-.head-line svg {
-  color: var(--text-3);
+.head-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
 }
 
-.detail-grid {
+.head-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ---------- Body ---------- */
+
+.sheet-grid {
   display: grid;
-  gap: 0.875rem;
+  gap: 1rem;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
 @media (min-width: 900px) {
-  .detail-grid {
+  .sheet-grid {
     grid-template-columns: minmax(0, 1.65fr) minmax(18rem, 1fr);
+    gap: 1.25rem;
   }
 }
 
-.status-switch {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
+.saved-note {
+  color: var(--text-3);
+  font-size: 0.8125rem;
+  white-space: nowrap;
 }
 
-.status-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  min-height: 4.75rem;
-  padding: 0.75rem 0.5rem;
-  border: 1.5px solid var(--border);
+/* ---------- Status stepper ---------- */
+
+.stepper {
+  --gap: 4px;
+  --tone: var(--st-scheduled);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+  padding: var(--gap);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--surface-2);
+}
+
+.at-in_progress {
+  --tone: var(--st-progress);
+}
+
+.at-completed {
+  --tone: var(--st-done);
+}
+
+.stepper-thumb {
+  position: absolute;
+  top: var(--gap);
+  bottom: var(--gap);
+  left: var(--gap);
+  width: calc((100% - 4 * var(--gap)) / 3);
+  border-radius: var(--radius-sm);
+  background: var(--tone);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--tone) 55%, #000);
+  transform: translateX(calc(var(--i, 0) * (100% + var(--gap))));
+  transition:
+    transform var(--dur-3) var(--ease-out),
+    background-color var(--dur-3) var(--ease),
+    box-shadow var(--dur-3) var(--ease);
+}
+
+.step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  padding: 0.5rem 0.6rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
   color: var(--text-2);
   font: inherit;
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
   transition:
-    background-color 0.15s var(--ease),
-    border-color 0.15s var(--ease),
-    color 0.15s var(--ease);
+    color var(--dur-2) var(--ease) 60ms,
+    background-color var(--dur-1) var(--ease);
 }
 
-.status-option:hover:not(:disabled) {
-  border-color: var(--border-strong);
-  color: var(--text);
+.step:hover:not([aria-pressed='true'], :disabled) {
   background: var(--surface-3);
+  color: var(--text);
 }
 
-.status-option:disabled {
+.step[aria-pressed='true'] {
+  color: var(--on-tone);
+}
+
+.step:disabled {
   cursor: progress;
 }
 
-.opt-scheduled[aria-pressed='true'] {
-  background: var(--st-scheduled-soft);
-  border-color: var(--st-scheduled);
-  color: var(--st-scheduled);
+.step:focus-visible {
+  outline-offset: 3px;
 }
 
-.opt-in_progress[aria-pressed='true'] {
-  background: var(--st-progress-soft);
-  border-color: var(--st-progress);
-  color: var(--st-progress);
-}
-
-.opt-completed[aria-pressed='true'] {
-  background: var(--st-done-soft);
-  border-color: var(--st-done);
-  color: var(--st-done);
-}
-
-.status-option[aria-pressed='true'] {
-  box-shadow: inset 0 0 0 1px currentcolor;
-}
+/* ---------- Work ---------- */
 
 .block-label {
-  margin: 1rem 0 0.3rem;
+  margin: 1.1rem 0 0.4rem;
   color: var(--text-2);
-  font-size: 0.8125rem;
-  font-weight: 650;
-  letter-spacing: 0.04em;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .section-title + .block-label {
-  margin-top: 0.75rem;
+  margin-top: 0;
 }
 
 .block-text {
@@ -379,60 +412,114 @@ async function remove() {
   color: var(--text-3);
 }
 
+/* Notes are written on ruled paper with a margin line. */
 .notes {
-  padding: 0.75rem 0.9rem;
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
+  --line: 1.75rem;
+  min-height: calc(var(--line) * 3 + 0.5rem);
+  padding: 0.25rem 0.9rem 0.25rem 1.6rem;
+  line-height: var(--line);
   border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(
+        90deg,
+        transparent 0.85rem,
+        color-mix(in srgb, var(--accent) 55%, transparent) 0.85rem,
+        color-mix(in srgb, var(--accent) 55%, transparent) calc(0.85rem + 1.5px),
+        transparent calc(0.85rem + 1.5px)
+      )
+      no-repeat,
+    repeating-linear-gradient(
+        transparent 0,
+        transparent calc(var(--line) - 1px),
+        var(--border) calc(var(--line) - 1px),
+        var(--border) var(--line)
+      )
+      0 -1px / 100% var(--line),
+    var(--surface-2);
 }
 
-.info {
+/* ---------- Facts ---------- */
+
+.facts {
   display: grid;
-  gap: 0.9rem;
-  margin: 0.75rem 0 0;
+  margin: 0;
 }
 
-.info dt {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-2);
-  font-size: 0.8125rem;
-  font-weight: 600;
+.facts > div {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-top: 1px dashed var(--border);
 }
 
-.info dt svg {
+.facts > div:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.facts dt {
+  padding-top: 0.2rem;
   color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.info dd {
-  margin: 0.15rem 0 0 1.4rem;
+.facts dd {
+  margin: 0;
   overflow-wrap: anywhere;
 }
 
-.info dd.high {
+.facts dd.prio-high {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   color: var(--danger);
+  font-weight: 600;
+}
+
+.facts dd.prio-low {
+  color: var(--text-2);
+}
+
+.facts dd.pending {
+  color: var(--info);
   font-weight: 600;
 }
 
 .due-rel {
   display: inline-block;
-  margin-left: 0.4rem;
-  font-size: 0.8125rem;
-  font-weight: 650;
+  margin-left: 0.35rem;
+  padding: 0 0.35rem;
+  border: 1px solid currentcolor;
+  border-radius: var(--radius-xs);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  vertical-align: 0.1em;
 }
 
 .due-overdue {
   color: var(--danger);
 }
 
-.due-today,
-.due-soon {
-  color: var(--warn);
+.due-today {
+  color: var(--accent-ink);
 }
 
-.sync-note {
-  margin-bottom: 0;
+.due-soon {
+  color: var(--text-2);
+}
+
+.sync-link {
+  margin: 0.75rem 0 0;
 }
 
 @media (max-width: 640px) {
@@ -444,16 +531,26 @@ async function remove() {
     flex: 1;
   }
 
-  .status-option {
-    min-height: 4.25rem;
+  .saved-note {
+    display: none;
+  }
+
+  .step {
+    flex-direction: column;
+    gap: 0.3rem;
+    min-height: 3.75rem;
     font-size: 0.875rem;
   }
 }
 
 @media (forced-colors: active) {
-  .status-option[aria-pressed='true'] {
+  .stepper-thumb {
     forced-color-adjust: none;
     background: Highlight;
+  }
+
+  .step[aria-pressed='true'] {
+    forced-color-adjust: none;
     color: HighlightText;
   }
 }

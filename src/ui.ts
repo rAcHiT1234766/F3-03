@@ -108,3 +108,8 @@ export function describeDue(
   if (days < 7) return { text: `Due in ${days} days`, tone: 'soon' }
   return { text: `Due ${formatDueDate(value)}`, tone: 'later' }
 }
+
+/** Short printed reference for a job, as on a paper docket ("3F2A1B"). */
+export function jobRef(id: string): string {
+  return id.slice(0, 6).toUpperCase()
+}

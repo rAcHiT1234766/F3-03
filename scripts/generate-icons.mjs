@@ -4,9 +4,11 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { deflateSync } from 'node:zlib'
 
-const ACCENT = [31, 111, 92]
-const DARK = [18, 72, 59]
-const WHITE = [255, 255, 255]
+// The mark: three ink signal bars and an empty fourth on a safety-orange tile (64-unit grid,
+// same geometry as public/favicon.svg and src/components/BrandMark.vue).
+const ORANGE = [255, 107, 26]
+const INK = [22, 23, 26]
+const u = (v) => v / 64
 
 function crc32(buf) {
   let c = ~0
@@ -54,30 +56,21 @@ function roundedRect(x, y, x0, y0, x1, y1, r) {
   return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r
 }
 
-function segment(x, y, ax, ay, bx, by) {
-  const px = x - ax
-  const py = y - ay
-  const dx = bx - ax
-  const dy = by - ay
-  const t = Math.max(0, Math.min(1, (px * dx + py * dy) / (dx * dx + dy * dy)))
-  return Math.hypot(px - dx * t, py - dy * t)
-}
-
 /** Returns [r, g, b, a] for one sample point. `scale` shrinks artwork around the center. */
 function sample(x, y, { maskable, scale }) {
-  const tile = maskable ? -1 : roundedRect(x, y, 0, 0, 1, 1, 0.22)
+  const tile = maskable ? -1 : roundedRect(x, y, 0, 0, 1, 1, u(12))
   if (tile > 0) return [0, 0, 0, 0]
   // Map into artwork space.
   const ax = (x - 0.5) / scale + 0.5
   const ay = (y - 0.5) / scale + 0.5
-  const check = Math.min(
-    segment(ax, ay, 0.37, 0.54, 0.46, 0.63),
-    segment(ax, ay, 0.46, 0.63, 0.63, 0.44),
+  const bars = Math.min(
+    roundedRect(ax, ay, u(12), u(38), u(19), u(48), u(1.5)),
+    roundedRect(ax, ay, u(23), u(30), u(30), u(48), u(1.5)),
+    roundedRect(ax, ay, u(34), u(22), u(41), u(48), u(1.5)),
+    // The fourth bar is an outline: a 2.5-unit stroke around its centre line.
+    Math.abs(roundedRect(ax, ay, u(46.25), u(15.25), u(50.75), u(46.75), u(1))) - u(1.25),
   )
-  if (check < 0.035) return [...ACCENT, 255]
-  if (roundedRect(ax, ay, 0.41, 0.18, 0.59, 0.29, 0.035) < 0) return [...DARK, 255]
-  if (roundedRect(ax, ay, 0.28, 0.23, 0.72, 0.8, 0.06) < 0) return [...WHITE, 255]
-  return [...ACCENT, 255]
+  return bars < 0 ? [...INK, 255] : [...ORANGE, 255]
 }
 
 function render(size, options) {

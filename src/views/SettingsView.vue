@@ -2,24 +2,16 @@
 import {
   Bell,
   BellOff,
-  BellRing,
-  CircleCheck,
-  Clock,
+  CircleArrowUp,
   Download,
-  HardDrive,
   Info,
   LogOut,
   Monitor,
-  MonitorSmartphone,
   Moon,
-  Palette,
   RefreshCw,
   ShieldCheck,
-  Smartphone,
-  Sparkles,
   Sun,
   TriangleAlert,
-  UserRound,
 } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { getServices, requireSession, signOutUser } from '../auth'
@@ -186,6 +178,7 @@ const update = () =>
   <div class="page container-narrow">
     <div class="page-head">
       <div>
+        <p class="eyebrow">Account and device</p>
         <h1>Settings</h1>
         <p class="page-sub">This account, this device, and how FieldLog looks and works here.</p>
       </div>
@@ -195,21 +188,25 @@ const update = () =>
     </p>
 
     <section class="card" aria-labelledby="account-h">
-      <h2 id="account-h" class="section-title"><UserRound :size="18" />Account</h2>
+      <h2 id="account-h" class="section-title">Account</h2>
       <div class="account">
         <span class="avatar" aria-hidden="true">{{ initial }}</span>
         <div class="account-main">
           <p class="account-email" data-testid="account-email">{{ s.email }}</p>
-          <p class="small muted">
-            {{ s.projectId }}<template v-if="emulator"> (local emulators)</template>
+          <p class="account-project">
+            {{ s.projectId }}<template v-if="emulator"> · local emulators</template>
           </p>
         </div>
       </div>
-      <dl class="details small facts">
-        <dt>This device</dt>
-        <dd class="num">{{ s.deviceId.slice(0, 8) }}</dd>
-        <dt>App version</dt>
-        <dd data-testid="app-version" class="num">{{ appVersion }}</dd>
+      <dl class="facts">
+        <div>
+          <dt>This device</dt>
+          <dd>{{ s.deviceId.slice(0, 8) }}</dd>
+        </div>
+        <div>
+          <dt>App version</dt>
+          <dd data-testid="app-version">{{ appVersion }}</dd>
+        </div>
       </dl>
 
       <div v-if="signOutStep === 'idle'" class="row actions">
@@ -290,7 +287,7 @@ const update = () =>
     </section>
 
     <section class="card" aria-labelledby="appearance-h">
-      <h2 id="appearance-h" class="section-title"><Palette :size="18" />Appearance</h2>
+      <h2 id="appearance-h" class="section-title">Appearance</h2>
       <fieldset class="segmented theme-choice">
         <legend class="sr-only">Theme</legend>
         <label v-for="option in THEME_OPTIONS" :key="option.value">
@@ -311,9 +308,9 @@ const update = () =>
     </section>
 
     <section class="card" aria-labelledby="app-h">
-      <h2 id="app-h" class="section-title"><Smartphone :size="18" />App and offline use</h2>
+      <h2 id="app-h" class="section-title">App and offline use</h2>
       <p v-if="needRefresh" class="banner banner-warn">
-        <Sparkles :size="18" />
+        <CircleArrowUp :size="18" />
         <span class="banner-body row">
           A new version is ready.
           <button class="btn btn-small btn-primary" type="button" :disabled="busy" @click="update">
@@ -321,20 +318,14 @@ const update = () =>
           </button>
         </span>
       </p>
-      <p class="status-row" :class="{ ok: offlineReady && controlled }">
-        <CircleCheck v-if="offlineReady && controlled" :size="18" />
-        <Clock v-else :size="18" />
-        <span>
-          <template v-if="offlineReady && controlled"
-            >This app is ready to open offline on this device.</template
-          >
-          <template v-else
-            >Offline readiness is confirmed once the app's files are cached.</template
-          >
-        </span>
+      <p class="state-line" :class="{ ok: offlineReady && controlled }">
+        <template v-if="offlineReady && controlled"
+          >This app is ready to open offline on this device.</template
+        >
+        <template v-else>Offline readiness is confirmed once the app's files are cached.</template>
       </p>
       <template v-if="isStandalone">
-        <p class="status-row ok"><MonitorSmartphone :size="18" />Running as an installed app.</p>
+        <p class="state-line ok">Running as an installed app.</p>
       </template>
       <template v-else>
         <button v-if="installPrompt" class="btn btn-primary" type="button" @click="install">
@@ -357,33 +348,27 @@ const update = () =>
     </section>
 
     <section class="card" aria-labelledby="push-h">
-      <h2 id="push-h" class="section-title"><Bell :size="18" />Notifications</h2>
+      <h2 id="push-h" class="section-title">Notifications</h2>
       <p class="small muted">
         Optional. A notification says a job was updated and opens it; it is a hint, not the data
         itself, and delivery is not guaranteed.
       </p>
       <p v-if="!push" class="small">Checking support…</p>
       <template v-else-if="push.state === 'unsupported' || push.state === 'unconfigured'">
-        <p class="status-row" data-testid="push-state">
-          <BellOff :size="18" /><span>Not available here: {{ push.reason }}</span>
-        </p>
+        <p class="state-line off" data-testid="push-state">Not available here: {{ push.reason }}</p>
       </template>
       <template v-else>
         <p
-          class="status-row"
-          :class="{ ok: pushEnabled && push.state !== 'denied' }"
+          class="state-line"
+          :class="{ ok: pushEnabled && push.state !== 'denied', off: push.state === 'denied' }"
           data-testid="push-state"
         >
-          <BellOff v-if="push.state === 'denied' || !pushEnabled" :size="18" />
-          <BellRing v-else :size="18" />
-          <span>
-            <template v-if="push.state === 'denied'"
-              >Blocked in browser settings. Allow notifications for this site to turn them
-              on.</template
-            >
-            <template v-else-if="pushEnabled">On for this device.</template>
-            <template v-else>Off.</template>
-          </span>
+          <template v-if="push.state === 'denied'"
+            >Blocked in browser settings. Allow notifications for this site to turn them
+            on.</template
+          >
+          <template v-else-if="pushEnabled">On for this device.</template>
+          <template v-else>Off.</template>
         </p>
         <button
           v-if="!pushEnabled && push.state !== 'denied'"
@@ -401,12 +386,14 @@ const update = () =>
     </section>
 
     <section class="card" aria-labelledby="storage-h">
-      <h2 id="storage-h" class="section-title"><HardDrive :size="18" />Storage on this device</h2>
+      <h2 id="storage-h" class="section-title">Storage on this device</h2>
       <p v-if="!storage" class="small">Storage details are not available in this browser.</p>
       <template v-else>
-        <div class="usage" aria-hidden="true">
-          <div class="usage-bar" :style="{ width: `${usagePercent}%` }" />
+        <!-- A gauge with a tick every tenth of the space the browser offers. -->
+        <div class="gauge" aria-hidden="true">
+          <div class="gauge-fill" :style="{ width: `${usagePercent}%` }" />
         </div>
+        <div class="gauge-scale" aria-hidden="true"><span>0</span><span>Available</span></div>
         <p class="small">
           Using {{ mb(storage.usage) }} of about {{ mb(storage.quota) }} available to this site.
           Persistent storage:
@@ -436,24 +423,30 @@ const update = () =>
 </template>
 
 <style scoped>
+/* ---------- Account ---------- */
+
 .account {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
-  margin: 0.25rem 0 1rem;
+  gap: 1rem;
+  margin: 0 0 1.1rem;
 }
 
+/* The account's initial on an ink tile with an orange edge, like the app mark. */
 .avatar {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 999px;
-  background: linear-gradient(150deg, #1f6f5c, #12483b);
-  color: #fff;
-  font-size: 1.25rem;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: var(--radius-sm);
+  background: var(--header);
+  color: var(--header-text);
+  box-shadow: 0 3px 0 var(--accent);
+  font-size: 1.625rem;
   font-weight: 700;
+  font-stretch: var(--condensed);
+  line-height: 1;
 }
 
 .account-main {
@@ -465,23 +458,56 @@ const update = () =>
 }
 
 .account-email {
+  font-size: 1.0625rem;
   font-weight: 650;
   overflow-wrap: anywhere;
 }
 
+.account-project {
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+}
+
 .facts {
-  padding: 0.75rem 0.9rem;
-  border-radius: var(--radius);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.facts > div {
+  padding: 0.65rem 0;
+}
+
+.facts > div + div {
+  padding-left: 1.25rem;
+  border-left: 1px solid var(--border);
+}
+
+.facts dt {
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.facts dd {
+  margin: 0.15rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
 }
 
 .actions {
-  margin-top: 1rem;
+  margin-top: 1.1rem;
 }
 
 .panel {
-  margin-top: 1rem;
+  margin: 1.1rem 0 0;
 }
 
 .panel p {
@@ -500,6 +526,8 @@ const update = () =>
   margin-top: 0.2rem;
 }
 
+/* ---------- Appearance ---------- */
+
 .theme-choice {
   max-width: 26rem;
   margin-bottom: 0.6rem;
@@ -509,20 +537,41 @@ const update = () =>
   flex: 1 1 0;
 }
 
-.status-row {
+/* ---------- States ---------- */
+
+/* A state in words, led by a small lamp: filled when on or ready, hollow otherwise. */
+.state-line {
   display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
+  align-items: baseline;
+  gap: 0.6rem;
   font-size: 0.9375rem;
 }
 
-.status-row svg {
-  margin-top: 0.15rem;
-  color: var(--text-3);
+.state-line::before {
+  content: '';
+  flex-shrink: 0;
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 1.5px solid var(--text-3);
+  border-radius: 50%;
+  transform: translateY(-0.05rem);
 }
 
-.status-row.ok svg {
-  color: var(--ok);
+.state-line.ok::before {
+  border-color: var(--ok);
+  background: var(--ok);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 20%, transparent);
+}
+
+.state-line.off::before {
+  border-color: var(--text-3);
+  background: linear-gradient(
+    135deg,
+    transparent calc(50% - 0.75px),
+    var(--text-3) calc(50% - 0.75px),
+    var(--text-3) calc(50% + 0.75px),
+    transparent calc(50% + 0.75px)
+  );
 }
 
 .install-help ul {
@@ -535,32 +584,77 @@ const update = () =>
   margin-top: 0.25rem;
 }
 
-.usage {
-  height: 0.6rem;
-  margin: 0.25rem 0 0.75rem;
-  border-radius: 999px;
-  background: var(--surface-3);
+/* ---------- Storage gauge ---------- */
+
+.gauge {
+  position: relative;
+  height: 0.75rem;
+  margin: 0.25rem 0 0.3rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(10% - 1px),
+      var(--border) calc(10% - 1px) 10%
+    ),
+    var(--surface-2);
   overflow: hidden;
 }
 
-.usage-bar {
+.gauge-fill {
   height: 100%;
-  min-width: 0.6rem;
-  border-radius: inherit;
+  min-width: 4px;
   background: var(--accent);
+  box-shadow: 1px 0 0 var(--edge);
+  animation: fill var(--dur-3) var(--ease-out) 150ms backwards;
+}
+
+@keyframes fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.gauge-fill {
+  transform-origin: left;
+}
+
+.gauge-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .storage-note {
   margin-top: 0.75rem;
 }
 
+@media (max-width: 640px) {
+  .facts > div + div {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
+
 @media (forced-colors: active) {
-  .usage {
-    border: 1px solid CanvasText;
+  .gauge {
+    border-color: CanvasText;
   }
 
-  .usage-bar {
+  .gauge-fill {
+    forced-color-adjust: none;
     background: Highlight;
+  }
+
+  .state-line::before {
+    border-color: CanvasText;
   }
 }
 </style>

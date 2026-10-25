@@ -3,6 +3,88 @@
 Entries follow the format in spec §31.1. Results are what was actually observed; anything not
 executed is marked not run or blocked. Newest first.
 
+## 2026-10-25 — Second interface redesign (checkpoint 4)
+
+**Date and commit:** 2026-10-25, not committed yet (working tree on `main`, after `29182a3`).
+
+**Current phase:** interface work requested by the owner after checkpoint 3, who found the first
+redesign generic ("looks AI-made"), the sign-in screen most of all. No sync, storage, rules or
+push behavior changed.
+
+**Behavior now implemented:**
+- A "field job book" design: ink app bar, paper background, safety orange as the only signal
+  colour, IBM Plex Sans (condensed headings) and IBM Plex Mono (labels, references, times) in
+  place of Inter, and a new brand mark (favicon, app icons, boot screen).
+- Sign-in: an ink panel with the product statement, a signal readout that cycles through synced,
+  no signal and back online, and three lines on how offline works; beside it a plain form with a
+  show-password button and, in emulator mode only, a "demo data only" tag.
+- Jobs: a ledger (one ruled sheet; per row a status stamp, a short reference, due, priority and
+  sync columns on desktop), today's date, an overdue count, "/" to focus search, and on phones a
+  four-column status filter and a floating New job button.
+- Job sheet: a status stepper whose marker slides, ruled notes, job info and sync panels.
+  Editor: one sheet in three numbered parts, status choices shown in their status colour.
+- Sync center: an instrument-style readout, a numbered queue and stamped conflicts. Settings: an
+  account block, lamp-style state lines and a storage gauge.
+- Motion: entrances and state changes slide, never fade; reduced motion switches them off.
+
+**Invariants or bugs addressed (each found by a test, a scan or the screenshot review):**
+- axe measured the sign-in headline against the paper behind a pseudo-element background
+  (2.51:1, Lighthouse Accessibility 96). The ink is now a real element background; back to 100.
+- Phones: the "ready offline" notice covered the New job button; the status filter strip hid
+  "Completed" past the edge; tapped controls kept their hover shade. All fixed.
+- Stacked editor fields on phones had no spacing; the disabled Sign in button looked like a broken
+  orange one; a paper strip showed under the sign-in panel while a notice was open; the desktop
+  search box cut off its placeholder.
+- The boot screen used the web fonts, so they started loading before first paint; it now uses
+  system fonts and the web fonts load with the app.
+- Reported by the owner after the first deploy: on wide screens the sign-in form scrolled away
+  with the cover when the cover was taller than the window. The form column is now sticky, and
+  notices on that screen float instead of adding scroll. Checked at 1280×650 and 1366×657: the
+  cover scrolls 165–170 px while the form does not move.
+
+**Commands run and actual results:**
+- `npm run check`: passed. Lint clean, typecheck clean, **83/83** unit tests, build.
+- `npx prettier --check src/ scripts/ index.html vite.config.ts`: clean.
+- `npx playwright test` (after `npm run build:e2e`): **14 passed, 5 skipped** (the opt-in
+  measurements). After the sign-in fix, one run in five had one failing test; its report was
+  overwritten by the next run before it was read, so the test is not known. The other four runs
+  passed in full.
+- axe on every screen (sign-in, jobs, job, editor with each status, new job, Sync center,
+  Settings, 404) at desktop and phone width, light and dark: no violations.
+- Lighthouse 13.5.0 on `/sign-in`: mobile **87–88** / desktop **100** Performance, 100
+  Accessibility, Best Practices and SEO, CLS 0 (desktop 0.005).
+- `MEASURE=1 npx playwright test tests/e2e/measure.spec.ts`: 5/5. Results, and a same-session
+  comparison with the previous design, in `docs/evidence.md`.
+- `npm run test:rules` and `npm run test:sync`: **not re-run** (no rules or sync code changed; last
+  results 21/21 and 17/17 at checkpoint 2).
+
+**Browser/device checks performed:** automated Chromium 156 (headless): screenshots at 1280 px and
+390 px in both themes, the phone status filter at 320–700 px. Not run: real devices, Firefox,
+Safari, screen reader, Windows contrast themes by hand.
+
+**Required external work:** since checkpoint 2 the owner created Firebase project `fe-03-56215`
+(alias `prod` in `.firebaserc`) and deployed the Firestore rules and Hosting, with a `no-cache`
+header on app routes (`firebase.json`). That deployment has the first redesign; this one is
+**not deployed**. Still not run: real push delivery (T43–T45), installation on a target browser
+(T42), Lighthouse on the deployed origin. GitHub and Google Drive submission: unchanged.
+
+**Known limitations:** on a slow first visit the text appears in the fallback face and switches to
+Plex when the fonts arrive (no layout shift). Mobile Lighthouse is 4 points below checkpoint 3,
+the cost of the second typeface. The sign-in readout animation is decorative and hidden from
+assistive technology.
+
+**Decisions and reasons:** `docs/decisions.md` § Interface design.
+
+**Next three tasks:**
+1. Deploy this build and rerun Lighthouse and the PWA checklist on the HTTPS origin.
+2. Real-device pass: install, offline use and push on a phone (T42–T45).
+3. Manual screen-reader and Windows contrast-theme check of the new screens.
+
+**Exact owner action needed:** review the redesign; commit it (with `.firebaserc`, `firebase.json`
+and the new `SignalBars.vue` and `StatusDot.vue`); then `npm run build` and
+`npx firebase deploy --only hosting --project prod` to publish it. The four `Screenshot (…).png`
+files in the project root are not part of the project.
+
 ## 2026-10-24 — Interface redesign (checkpoint 3)
 
 **Date and commit:** 2026-10-24, fourth commit on `main` (follows `b1f4937`).

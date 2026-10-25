@@ -1,24 +1,20 @@
 <script setup lang="ts">
 import {
   Bell,
-  CircleAlert,
+  CircleArrowUp,
   CircleCheck,
   ClipboardList,
-  Cloud,
-  CloudAlert,
-  CloudOff,
-  LoaderCircle,
   RefreshCw,
   Settings,
-  Sparkles,
   TriangleAlert,
   X,
 } from '@lucide/vue'
-import { computed, onBeforeUnmount, ref, watch, type Component } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authPhase, configProblems, getServices, session, storageNotice } from './auth'
 import BrandMark from './components/BrandMark.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
+import SignalBars from './components/SignalBars.vue'
 import { useLiveQuery, useOnline } from './composables/useJobs'
 import { isUuid, type JobMessage } from './domain'
 import { applyUpdate, controlled, needRefresh, offlineReady } from './pwa'
@@ -59,13 +55,6 @@ const PHASE_TONES: Record<SyncPhase, Tone> = {
 const statusTone = computed<Tone>(() =>
   !online.value && phase.value !== 'syncing' ? 'warn' : PHASE_TONES[phase.value],
 )
-const statusIcon = computed<Component>(() => {
-  if (!online.value) return CloudOff
-  if (phase.value === 'syncing') return LoaderCircle
-  if (phase.value === 'unreachable') return CloudAlert
-  if (statusTone.value === 'danger') return CircleAlert
-  return Cloud
-})
 
 // The Jobs tab stays highlighted on job details and the editor.
 const section = computed(() => {
@@ -137,7 +126,7 @@ function openPushedJob() {
     <header class="app-header">
       <div class="container header-row">
         <RouterLink to="/jobs" class="brand">
-          <BrandMark :size="30" />
+          <BrandMark :size="28" />
           <span>FieldLog</span>
         </RouterLink>
         <nav v-if="session" aria-label="Main" class="main-nav">
@@ -165,7 +154,7 @@ function openPushedJob() {
           :title="statusText"
           data-testid="status-line"
         >
-          <component :is="statusIcon" :size="16" :class="{ spin: statusIcon === LoaderCircle }" />
+          <span class="lamp" aria-hidden="true" />
           <span class="sr-only">Sync status: </span>
           <span class="sync-text">{{ statusText }}</span>
         </RouterLink>
@@ -181,6 +170,7 @@ function openPushedJob() {
 
     <main id="main" class="container" tabindex="-1">
       <div v-if="authPhase === 'unconfigured'" class="page container-narrow">
+        <p class="eyebrow">Setup needed</p>
         <h1>FieldLog needs configuration</h1>
         <p>
           Copy <code>.env.example</code> to <code>.env.local</code> and fill in the public Firebase
@@ -190,10 +180,11 @@ function openPushedJob() {
           <li v-for="p in configProblems" :key="p">{{ p }}</li>
         </ul>
       </div>
-      <p v-else-if="authPhase === 'starting' || authPhase === 'opening'" class="page muted opening">
-        <LoaderCircle :size="18" class="spin" /> Opening FieldLog…
+      <p v-else-if="authPhase === 'starting' || authPhase === 'opening'" class="opening">
+        <SignalBars :size="18" motion="seek" /> Opening FieldLog…
       </p>
       <div v-else-if="authPhase === 'storage_error'" class="page container-narrow">
+        <p class="eyebrow">This device</p>
         <h1>Local storage unavailable</h1>
         <p>{{ storageNotice }}</p>
       </div>
@@ -204,9 +195,12 @@ function openPushedJob() {
     </main>
 
     <!-- Transient notices come after the page content, so they never push it down. -->
-    <div class="toasts container">
+    <div
+      class="toasts container"
+      :class="{ 'clear-fab': route.name === 'jobs', 'over-page': route.name === 'sign-in' }"
+    >
       <div v-if="needRefresh && !updateDeferred" class="toast toast-update" role="status">
-        <Sparkles :size="20" class="toast-icon" />
+        <CircleArrowUp :size="20" class="toast-icon" />
         <div class="toast-body">
           <p class="toast-title">A new version of FieldLog is ready.</p>
           <p v-if="updateMessage" class="small toast-detail">{{ updateMessage }}</p>
@@ -276,21 +270,26 @@ function openPushedJob() {
   display: flex;
   flex-direction: column;
   flex: 1;
+  /* Full-bleed panels (the sign-in cover) reach the window edges and the end of the page without
+     adding a scroll. "clip" is not a scroll container, so the sticky header still sticks. */
+  overflow: clip;
 }
 
+/* The app bar: ink in both themes, like the cover of a job book. */
 .app-header {
+  --focus: var(--header-text);
   position: sticky;
   top: 0;
   z-index: 30;
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  backdrop-filter: saturate(1.4) blur(10px);
-  border-bottom: 1px solid var(--border);
+  background: var(--header);
+  color: var(--header-text);
+  border-bottom: 1px solid var(--header-border);
 }
 
 .header-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem 1.5rem;
+  gap: 0.75rem 2rem;
   min-height: var(--header-h);
 }
 
@@ -301,19 +300,29 @@ function openPushedJob() {
   margin-left: -0.25rem;
   padding: 0.25rem;
   border-radius: var(--radius-sm);
-  color: var(--text);
-  font-size: 1.125rem;
-  font-weight: 750;
-  letter-spacing: -0.02em;
+  color: var(--header-text);
+  font-size: 1.3125rem;
+  font-weight: 700;
+  font-stretch: var(--condensed);
+  letter-spacing: -0.01em;
   text-decoration: none;
 }
 
 .brand:hover {
-  color: var(--text);
+  color: var(--header-text);
+}
+
+.brand :deep(.brand-mark) {
+  transition: transform var(--dur-3) var(--ease-out);
+}
+
+.brand:hover :deep(.brand-mark) {
+  transform: rotate(-6deg);
 }
 
 .main-nav {
   display: flex;
+  align-self: stretch;
   gap: 0.25rem;
 }
 
@@ -322,27 +331,49 @@ function openPushedJob() {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  min-height: 2.5rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: var(--radius-sm);
-  color: var(--text-2);
+  padding: 0 0.75rem;
+  color: var(--header-text-2);
   font-size: 0.9375rem;
   font-weight: 550;
   text-decoration: none;
-  transition:
-    background-color 0.15s var(--ease),
-    color 0.15s var(--ease);
+  transition: color var(--dur-1) var(--ease);
+}
+
+/* Words only in the app bar; the icons are for the phone tab bar. */
+.nav-link > svg {
+  display: none;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: -1px;
+  height: 3px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform var(--dur-2) var(--ease-out);
 }
 
 .nav-link:hover {
-  background: var(--surface-3);
-  color: var(--text);
+  color: var(--header-text);
+}
+
+.nav-link:hover::after {
+  transform: scaleX(0.35);
 }
 
 .nav-link.active {
-  background: var(--accent-soft);
-  color: var(--accent-soft-text);
-  font-weight: 650;
+  color: var(--header-text);
+}
+
+.nav-link.active::after {
+  transform: scaleX(1);
+}
+
+.nav-link:focus-visible {
+  outline-offset: -4px;
 }
 
 .count {
@@ -350,35 +381,83 @@ function openPushedJob() {
   place-items: center;
   min-width: 1.3rem;
   height: 1.3rem;
-  padding: 0 0.35rem;
-  border-radius: 999px;
-  background: var(--warn);
-  color: var(--surface);
+  padding: 0 0.3rem;
+  border-radius: var(--radius-xs);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-family: var(--mono);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
+  animation: pop var(--dur-2) var(--ease-out);
 }
 
+@keyframes pop {
+  from {
+    transform: scale(0.6);
+  }
+}
+
+/* The sync readout: a lamp and the state in plain words. */
 .sync-status {
+  --lamp: #7ed29b;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.55rem;
   min-width: 0;
   margin-left: auto;
-  padding: 0.35rem 0.8rem;
+  padding: 0.35rem 0.75rem;
   white-space: nowrap;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-2);
-  font-size: 0.8125rem;
-  font-weight: 550;
+  border: 1px solid var(--header-border);
+  border-radius: var(--radius-sm);
+  background: var(--header-2);
+  color: var(--header-text-2);
+  font-family: var(--mono);
+  font-size: 0.75rem;
   text-decoration: none;
+  transition:
+    color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
 }
 
 .sync-status:hover {
-  color: var(--text);
-  border-color: var(--border-strong);
+  color: var(--header-text);
+  border-color: color-mix(in srgb, var(--header-text) 35%, transparent);
+}
+
+.lamp {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--lamp);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lamp) 22%, transparent);
+}
+
+.tone-busy {
+  --lamp: #97b3ff;
+}
+
+.tone-busy .lamp {
+  animation: pulse 1.1s var(--ease) infinite;
+}
+
+.tone-warn {
+  --lamp: #f2c063;
+  color: var(--header-text);
+  border-color: color-mix(in srgb, #f2c063 45%, transparent);
+}
+
+.tone-danger {
+  --lamp: #ff8a7e;
+  color: var(--header-text);
+  border-color: color-mix(in srgb, #ff8a7e 50%, transparent);
+}
+
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--lamp) 0%, transparent);
+  }
 }
 
 /* Long states shorten with an ellipsis here; the full text stays in the DOM and the tooltip,
@@ -387,34 +466,6 @@ function openPushedJob() {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.tone-ok svg {
-  color: var(--ok);
-}
-
-.tone-busy svg {
-  color: var(--info);
-}
-
-.tone-warn {
-  background: var(--warn-soft);
-  border-color: color-mix(in srgb, var(--warn) 35%, transparent);
-  color: var(--text);
-}
-
-.tone-warn svg {
-  color: var(--warn);
-}
-
-.tone-danger {
-  background: var(--danger-soft);
-  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
-  color: var(--text);
-}
-
-.tone-danger svg {
-  color: var(--danger);
 }
 
 main {
@@ -428,7 +479,16 @@ main:focus {
 .opening {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 2.25rem 0;
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 0.875rem;
+}
+
+.opening :deep(.signal) {
+  color: var(--accent-ink);
 }
 
 .toasts {
@@ -445,27 +505,50 @@ main:focus {
   pointer-events: none;
 }
 
+/* No notices: no reserved space (full-height screens such as sign-in end at the window edge). */
+.toasts:empty {
+  margin-block: 0;
+}
+
+/* The wide sign-in screen pins its form while the cover scrolls (SignInView). Reserved space
+   would add scrolling past the form's column and carry the form away, so notices float there. */
+@media (min-width: 900px) {
+  .toasts.over-page {
+    position: fixed;
+    inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+    margin-block: 0;
+  }
+}
+
+/* A dark slip, whatever the theme. */
 .toast {
+  --focus: var(--header-text);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.6rem 0.8rem;
+  gap: 0.6rem 0.85rem;
   width: min(100%, 40rem);
-  padding: 0.75rem 0.75rem 0.75rem 1rem;
-  border: 1px solid var(--border);
+  padding: 0.7rem 0.7rem 0.7rem 1rem;
+  border: 1px solid var(--header-border);
+  border-left: 3px solid var(--accent);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--header);
+  color: var(--header-text);
   box-shadow: var(--shadow-lg);
   pointer-events: auto;
-  animation: toast-in 0.2s var(--ease);
+  animation: toast-in var(--dur-3) var(--ease-out);
 }
 
 .toast-icon {
-  color: var(--info);
+  color: #97b3ff;
+}
+
+.toast-ok {
+  border-left-color: #7ed29b;
 }
 
 .toast-ok .toast-icon {
-  color: var(--ok);
+  color: #7ed29b;
 }
 
 .toast-update .toast-icon {
@@ -485,7 +568,7 @@ main:focus {
 
 .toast-detail {
   margin: 0.2rem 0 0;
-  color: var(--text-2);
+  color: var(--header-text-2);
 }
 
 .toast-actions {
@@ -494,10 +577,15 @@ main:focus {
   margin-left: auto;
 }
 
+.toast .btn-ghost {
+  --btn-fg: var(--header-text);
+  --btn-hover: var(--header-2);
+}
+
 /* Slide only: fading text would briefly fall below the contrast minimum. */
 @keyframes toast-in {
   from {
-    transform: translateY(12px);
+    transform: translateY(16px);
   }
 }
 
@@ -511,21 +599,22 @@ main:focus {
     --tabbar-h: 0px;
   }
 
-  /* backdrop-filter would make the header the containing block of the fixed tab bar. */
-  .app-header {
-    background: var(--surface);
-    backdrop-filter: none;
+  /* The jobs list floats its "New job" button above the tab bar; notices stack above that button
+     instead of covering it (the list reserves blank space at its end for both). */
+  .toasts.clear-fab {
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 5rem);
   }
 
   .header-row {
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.5rem 1rem;
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
     min-height: calc(var(--header-h) - 1px);
   }
 
   .main-nav {
+    --focus: var(--header-text);
     position: fixed;
     inset: auto 0 0;
     z-index: 40;
@@ -533,10 +622,9 @@ main:focus {
     grid-template-columns: repeat(3, 1fr);
     gap: 0;
     height: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
-    padding: 0.35rem 0.5rem env(safe-area-inset-bottom, 0px);
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    box-shadow: 0 -4px 16px rgb(0 0 0 / 6%);
+    padding: 0 0.5rem env(safe-area-inset-bottom, 0px);
+    background: var(--header);
+    border-top: 1px solid var(--header-border);
   }
 
   .nav-link {
@@ -545,35 +633,47 @@ main:focus {
     gap: 0.2rem;
     padding: 0.25rem;
     font-size: 0.75rem;
-    border-radius: var(--radius);
   }
 
-  .nav-link.active {
-    background: transparent;
+  .nav-link > svg {
+    display: block;
+    transition: transform var(--dur-2) var(--ease-out);
   }
 
-  .nav-link.active svg {
-    background: var(--accent-soft);
-    border-radius: 999px;
-    padding: 0.15rem 1rem;
-    box-sizing: content-box;
+  .nav-link.active > svg {
+    color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .nav-link::after {
+    top: -1px;
+    bottom: auto;
+    left: 28%;
+    right: 28%;
+  }
+
+  .nav-link:hover::after {
+    transform: scaleX(0);
+  }
+
+  .nav-link.active::after {
+    transform: scaleX(1);
   }
 
   .count {
     position: absolute;
-    top: 0.15rem;
-    left: calc(50% + 0.45rem);
+    top: 0.45rem;
+    left: calc(50% + 0.55rem);
     min-width: 1.15rem;
     height: 1.15rem;
     padding: 0 0.25rem;
-    border: 2px solid var(--surface);
-    box-sizing: content-box;
+    box-shadow: 0 0 0 2px var(--header);
     font-size: 0.6875rem;
   }
 
   .sync-status {
-    padding: 0.3rem 0.7rem;
-    font-size: 0.75rem;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.6875rem;
   }
 }
 
@@ -581,10 +681,11 @@ main:focus {
 @media (max-width: 480px) {
   .sync-status {
     flex-basis: 100%;
-    justify-content: center;
-    margin-left: 0;
+    margin: -0.1rem 0 0;
+    padding: 0.15rem 0;
+    border: 0;
+    background: none;
     white-space: normal;
-    text-align: center;
   }
 
   .sync-text {
@@ -595,6 +696,11 @@ main:focus {
 @media (forced-colors: active) {
   .nav-link.active {
     outline: 2px solid Highlight;
+  }
+
+  .lamp {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
   }
 }
 </style>

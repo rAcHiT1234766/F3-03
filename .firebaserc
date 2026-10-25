@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "demo-fieldlog"
+    "default": "demo-fieldlog",
+    "prod": "fe-03-56215"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "measuredAt": "2026-10-24T13:36:09.297Z",
+  "measuredAt": "2026-10-25T15:55:43.989Z",
   "environment": {
     "build": "dist-e2e (production build, emulator mode)",
     "browser": "Playwright Chromium (headless)",
@@ -9,46 +9,46 @@
     "localSave": {
       "description": "Save click to rendered job details (create, 10 runs)",
       "runs": 10,
-      "medianMs": 17.1,
-      "minMs": 9.4,
-      "maxMs": 49.6,
+      "medianMs": 8.1,
+      "minMs": 7,
+      "maxMs": 20.4,
       "samplesMs": [
-        9.4,
-        12,
-        12.6,
-        13.8,
-        17,
-        17.2,
-        20.5,
-        20.6,
-        24.1,
-        49.6
+        7,
+        7.4,
+        7.4,
+        7.5,
+        8,
+        8.1,
+        8.4,
+        8.6,
+        9.3,
+        20.4
       ]
     },
     "warmOfflineLoad": {
       "description": "Offline navigation start to first job list item (25 jobs, prepared profile, 5 runs)",
       "runs": 5,
-      "medianMs": 190.3,
-      "minMs": 180.4,
-      "maxMs": 420.5,
+      "medianMs": 164.4,
+      "minMs": 144.3,
+      "maxMs": 231.9,
       "samplesMs": [
-        180.4,
-        188.9,
-        190.3,
-        283.7,
-        420.5
+        144.3,
+        149.5,
+        164.4,
+        192.3,
+        231.9
       ]
     },
     "queueDrain": {
       "description": "20 operations (2 jobs × create + 9 status edits), 3 runs",
       "runs": 3,
-      "medianMs": 1868.7,
-      "minMs": 1698.2,
-      "maxMs": 3186.4,
+      "medianMs": 2435.2,
+      "minMs": 2211.5,
+      "maxMs": 3308.9,
       "samplesMs": [
-        1698.2,
-        1868.7,
-        3186.4
+        2211.5,
+        2435.2,
+        3308.9
       ]
     },
     "reconcile50": {
@@ -56,25 +56,25 @@
       "firstDownload": {
         "note": "sign-in submit to all jobs listed (auth + DB open + read + apply)",
         "runs": 3,
-        "medianMs": 242.4,
-        "minMs": 236.9,
-        "maxMs": 319.7,
+        "medianMs": 235.8,
+        "minMs": 214.9,
+        "maxMs": 239.6,
         "samplesMs": [
-          236.9,
-          242.4,
-          319.7
+          214.9,
+          235.8,
+          239.6
         ]
       },
       "repeatSync": {
         "note": "Sync now with nothing changed (read + compare)",
         "runs": 3,
-        "medianMs": 53.9,
-        "minMs": 51.1,
-        "maxMs": 79.8,
+        "medianMs": 52,
+        "minMs": 48,
+        "maxMs": 53,
         "samplesMs": [
-          51.1,
-          53.9,
-          79.8
+          48,
+          52,
+          53
         ]
       }
     },
@@ -83,25 +83,25 @@
       "firstDownload": {
         "note": "sign-in submit to all jobs listed (auth + DB open + read + apply)",
         "runs": 3,
-        "medianMs": 415.5,
-        "minMs": 409.2,
-        "maxMs": 424.4,
+        "medianMs": 331.2,
+        "minMs": 316.4,
+        "maxMs": 331.9,
         "samplesMs": [
-          409.2,
-          415.5,
-          424.4
+          316.4,
+          331.2,
+          331.9
         ]
       },
       "repeatSync": {
         "note": "Sync now with nothing changed (read + compare)",
         "runs": 3,
-        "medianMs": 84.9,
-        "minMs": 82.4,
-        "maxMs": 88.2,
+        "medianMs": 92.1,
+        "minMs": 84.3,
+        "maxMs": 107.1,
         "samplesMs": [
-          82.4,
-          84.9,
-          88.2
+          84.3,
+          92.1,
+          107.1
         ]
       }
     }

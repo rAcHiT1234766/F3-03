@@ -17,11 +17,11 @@ function read(): ThemePreference {
 
 export const themePreference = ref<ThemePreference>(read())
 
-/** Keeps the browser's toolbar colour in step with the app header. */
+/** Keeps the browser's toolbar colour in step with the app bar. */
 function syncThemeColor() {
-  const surface = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim()
+  const header = getComputedStyle(document.documentElement).getPropertyValue('--header').trim()
   for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
-    meta.content = surface || meta.content
+    meta.content = header || meta.content
   }
 }
 
