@@ -22,8 +22,8 @@ not yet provided).
 | No caching of Firebase/API traffic in the worker | Pass | `src/sw.ts` registers only precache and navigation routes; Firestore requests fail offline (T41 shows the honest state) |
 | Prompt-based update; waits for unsaved input; one reload; queue preserved; old precache entries removed | Pass | T38 (build A to build B on the same origin) |
 | Database upgrade does not delete data | Pass (fixture) | T39 with a fixture v2 schema; no production v2 exists yet |
-| User-triggered install button when the browser offers it, honest otherwise | Pass (code); install itself **Not run** | Settings shows Install only after `beforeinstallprompt` and reports the user's actual choice; otherwise platform instructions |
-| Installed standalone launch with correct name, icon and start route (T42) | Not run | Needs an interactive Chrome/Edge install on a target device |
+| User-triggered install button when the browser offers it, honest otherwise | Pass (code); install done on Android Chrome (T42) | Settings shows Install only after `beforeinstallprompt` and reports the user's actual choice; otherwise platform instructions |
+| Installed standalone launch with correct name, icon and start route (T42) | Pass (partial) | Owner check on 2026-10-31, Android Chrome, live site: installs and opens standalone from the home-screen icon. Name, icon and start route not recorded separately |
 | Push opt-in from a user action; FCM through the same worker | Pass (code), delivery **Blocked** | Settings → Enable notifications; `getMessaging` in `src/sw.ts`; FID registration in `src/notifications.ts` |
 | Real push foreground / background / click (T43–T45) | Blocked | Needs a real Firebase project, VAPID key and an opted-in device. The page-side click routing is tested (T45 partial) |
 | Unsupported/unconfigured push leaves the app usable (T46) | Pass | `tests/e2e/session.spec.ts` |

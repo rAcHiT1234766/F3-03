@@ -3,6 +3,21 @@
 Entries follow the format in spec §31.1. Results are what was actually observed; anything not
 executed is marked not run or blocked. Newest first.
 
+## 2026-10-31 — Real-device install
+
+**Date and commit:** 2026-10-31, after `7fcc65a`. Checkpoint 4 below was committed as `7fcc65a`
+and deployed; the live site serves the same asset files as the local `dist/`.
+
+**Browser/device checks performed:** the owner installed FieldLog from
+https://fe-03-56215.web.app on an Android phone in Chrome. It opens from the home-screen icon in a
+standalone window with no address bar (T42, Pass (partial)). Not recorded: name, icon and start
+route separately, offline use on the phone, push (T43–T45).
+
+**Next three tasks:**
+1. Push on the installed phone app (T43–T45) and an airplane-mode edit that syncs afterwards.
+2. GitHub repository and the Google Drive upload (`docs/submission-index.md`).
+3. Manual screen-reader and Windows contrast-theme check of the new screens.
+
 ## 2026-10-25 — Second interface redesign (checkpoint 4)
 
 **Date and commit:** 2026-10-25, not committed yet (working tree on `main`, after `29182a3`).

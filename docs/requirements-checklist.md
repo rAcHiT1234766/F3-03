@@ -13,7 +13,7 @@ completed.
 | 3 | Create/edit/delete and queue insertion are atomic | Done | T01, T02 |
 | 4 | Prepared app and data usable after offline reload/reopen | Done | T35, T03, T06 (Chromium) |
 | 5 | Workbox caches required routes/assets, not account APIs | Done | T37; `src/sw.ts` (precache + navigation only) |
-| 6 | Manifest and installation flow work on a recorded target | Partial | Manifest and installability check pass; an actual install (T42) has not been run |
+| 6 | Manifest and installation flow work on a recorded target | Done (Android Chrome) | Manifest and installability check pass; installed and launched standalone on an Android phone in Chrome from the live site (T42, 2026-10-31) |
 | 7 | Outbox delivers actual changes to Firebase | Done (emulator) | T07, S suite. A real project is Blocked |
 | 8 | Retries reuse the same immutable opId/payload | Done | T09, T16, T17 |
 | 9 | Atomic receipts prevent duplicate canonical effects | Done | T08, T09, T21, T48; rules link job ↔ receipt |

@@ -55,7 +55,7 @@ mode).
 | T39 | Database migration | Pass (partial) | U "T39" | A fixture v2 upgrade keeps payloads, order and owner. There is no production v2 yet; an IndexedDB upgrade blocked by an old open tab was not exercised in a browser |
 | T40 | Storage failure | Pass | U "T40"; U `editor.test.ts` "T40" | Simulated `QuotaExceededError`: nothing stored, form input kept, clear message. A real quota exhaustion was not run |
 | T41 | Captive/server outage | Pass | B "T41" | Browser online, Firestore unreachable: "Cannot reach the server — retrying"; local work continues, then drains |
-| T42 | Installation | Not run | (B `pwa.spec.ts` installability check passes) | Needs an interactive install on Chrome/Edge |
+| T42 | Installation | Pass (partial) | Owner check, 2026-10-31 (B `pwa.spec.ts` installability check also passes) | Android phone, Chrome, live site: installed, and opens from the home-screen icon in a standalone window (no address bar). Name, icon and start route not recorded separately; desktop Chrome/Edge install Not run |
 | T43 | Real push foreground | Blocked | — | Needs a Firebase project, VAPID key and an opted-in device |
 | T44 | Real push background | Blocked | — | As T43 |
 | T45 | Notification click | Pass (partial) | B `pwa.spec.ts` "T45 (page side only)" | Worker → page message opens only a validated job route; a real notification click is Blocked |
