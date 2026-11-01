@@ -3,6 +3,23 @@
 Entries follow the format in spec §31.1. Results are what was actually observed; anything not
 executed is marked not run or blocked. Newest first.
 
+## 2026-11-01 — Real push on the phone
+
+**Date and commit:** 2026-11-01, after `9a046e2`. Code change: `scripts/send-test-push.mjs` now
+requires a valid `--job` (README updated).
+
+**Browser/device checks performed:** on the installed Android app (Chrome, live project) the owner
+enabled notifications, and test messages were sent from this PC with `scripts/send-test-push.mjs`
+(gcloud Application Default Credentials). T43 (banner while open; Open job works), T44 (system
+notification while closed) and T45 (tapping it opens the job) pass. The first two sends had no
+`--job`: Firebase accepted them, but the app drops messages without a valid job ID, so nothing
+appeared, so the script now refuses to send without a job ID.
+
+**Next three tasks:**
+1. An airplane-mode edit on the phone that syncs afterwards.
+2. GitHub repository and the Google Drive upload (`docs/submission-index.md`).
+3. Manual screen-reader and Windows contrast-theme check of the new screens.
+
 ## 2026-10-31 — Real-device install
 
 **Date and commit:** 2026-10-31, after `7fcc65a`. Checkpoint 4 below was committed as `7fcc65a`

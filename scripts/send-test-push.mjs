@@ -2,7 +2,7 @@
 //
 // Usage:
 //   node scripts/send-test-push.mjs --project <firebase-project-id> --uid <owner-uid> \
-//     --device <device-id> [--job <job-uuid>] [--dry-run]
+//     --device <device-id> --job <job-uuid> [--dry-run]
 //
 // Credentials come from Application Default Credentials: either
 //   GOOGLE_APPLICATION_CREDENTIALS=<path to a service-account key kept OUTSIDE this repository>
@@ -15,7 +15,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 function fail(message) {
   console.error(`send-test-push: ${message}`)
   console.error(
-    'Usage: node scripts/send-test-push.mjs --project <id> --uid <uid> --device <deviceId> [--job <jobId>] [--dry-run]',
+    'Usage: node scripts/send-test-push.mjs --project <id> --uid <uid> --device <deviceId> --job <jobId> [--dry-run]',
   )
   process.exit(2)
 }
@@ -30,15 +30,17 @@ const { values } = parseArgs({
   },
 })
 
-if (!values.project || !values.uid || !values.device)
-  fail('--project, --uid and --device are required.')
+if (!values.project || !values.uid || !values.device || !values.job)
+  fail('--project, --uid, --device and --job are required.')
 if (values.project.startsWith('demo-')) {
   fail('demo- projects exist only in the emulators, and the emulators do not deliver FCM messages.')
 }
 if (process.env.FIRESTORE_EMULATOR_HOST) {
   fail('FIRESTORE_EMULATOR_HOST is set. Real push delivery needs the real project; unset it.')
 }
-if (values.job && !UUID.test(values.job)) fail('--job must be a job UUID.')
+// The app drops messages without a valid job ID (parseJobMessage), so a send without one would
+// be accepted by FCM and then show nothing.
+if (!UUID.test(values.job)) fail('--job must be a job UUID.')
 if (!/^[A-Za-z0-9_-]{1,64}$/.test(values.device)) fail('--device must be a device ID.')
 
 const { applicationDefault, initializeApp } = await import('firebase-admin/app')
@@ -51,15 +53,12 @@ if (!device.exists || device.get('enabled') !== true || typeof device.get('fid')
   fail('That device has not opted in to notifications (no enabled device registration found).')
 }
 
-const jobId = values.job ?? null
+const jobId = values.job
 // Data-only message: the service worker shows exactly one generic notification, and an open
 // app shows an in-app banner instead. No HTML and no external URLs.
 const message = {
   fid: device.get('fid'),
-  data: {
-    type: 'job_update',
-    ...(jobId ? { jobId, tag: `job-${jobId.slice(0, 8)}` } : { tag: 'fieldlog-update' }),
-  },
+  data: { type: 'job_update', jobId, tag: `job-${jobId.slice(0, 8)}` },
   webpush: { headers: { Urgency: 'high', TTL: '3600' } },
 }
 

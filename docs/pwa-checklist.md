@@ -14,7 +14,7 @@ not yet provided).
 | Web app manifest: `id`, `name`, `short_name`, `description`, `start_url` `/jobs`, `scope` `/`, `display` `standalone`, theme/background colors | Pass | `tests/e2e/pwa.spec.ts` reads the parsed manifest through Chrome DevTools Protocol `Page.getAppManifest`: no errors, fields match |
 | Icons 192 and 512 (any) plus 512 maskable; maskable art within the safe zone | Pass | Same test fetches every icon. Icons inspected visually; maskable artwork reaches about 0.30 of the size from the center, inside the 0.40 safe zone |
 | Chrome's installability criteria | Pass | `Page.getInstallabilityErrors` returns no errors other than `in-incognito`, which only means the automated profile is incognito-like |
-| Secure context | Pass (local) | Served from `127.0.0.1` (a secure context). HTTPS deployment: **Blocked** |
+| Secure context | Pass | Served from `127.0.0.1` locally, and over HTTPS at https://fe-03-56215.web.app (Firebase Hosting), where the phone install and push tests ran |
 | One service worker, controlling the page | Pass | e2e tests wait for `navigator.serviceWorker.controller` before offline steps; only `/sw.js` is registered |
 | Precache covers lazy routes (editor, Sync center, Settings) | Pass | T37: those screens open offline without having been visited; build output lists 26 precache entries including all lazy chunks and the UI font |
 | Offline deep links (refresh `/jobs/{id}` offline) | Pass | T35 |
@@ -24,8 +24,8 @@ not yet provided).
 | Database upgrade does not delete data | Pass (fixture) | T39 with a fixture v2 schema; no production v2 exists yet |
 | User-triggered install button when the browser offers it, honest otherwise | Pass (code); install done on Android Chrome (T42) | Settings shows Install only after `beforeinstallprompt` and reports the user's actual choice; otherwise platform instructions |
 | Installed standalone launch with correct name, icon and start route (T42) | Pass (partial) | Owner check on 2026-10-31, Android Chrome, live site: installs and opens standalone from the home-screen icon. Name, icon and start route not recorded separately |
-| Push opt-in from a user action; FCM through the same worker | Pass (code), delivery **Blocked** | Settings → Enable notifications; `getMessaging` in `src/sw.ts`; FID registration in `src/notifications.ts` |
-| Real push foreground / background / click (T43–T45) | Blocked | Needs a real Firebase project, VAPID key and an opted-in device. The page-side click routing is tested (T45 partial) |
+| Push opt-in from a user action; FCM through the same worker | Pass | Settings → Enable notifications on the Android phone created its device document (`enabled: true`, seen in the Firestore console); `getMessaging` in `src/sw.ts` delivered T44 |
+| Real push foreground / background / click (T43–T45) | Pass | Owner check on 2026-11-01, installed app on Android Chrome, live project: in-app banner while open (T43), system notification while closed (T44), tapping it opens the job (T45) |
 | Unsupported/unconfigured push leaves the app usable (T46) | Pass | `tests/e2e/session.spec.ts` |
 | Accessibility of the main screens, light and dark | Pass (automated scope) | axe (WCAG 2.0/2.1 A/AA): no serious or critical violations on 7 screens in each color scheme. A manual screen-reader pass has not been run |
 

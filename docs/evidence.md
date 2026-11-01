@@ -1,12 +1,15 @@
 # Evidence report
 
-Format from spec §25.3. Values are what was observed on 2026-10-24. Nothing here comes from a
-deployed environment; every row says which environment produced it.
+Format from spec §25.3. Values are what was observed on 2026-10-24, except the real-device
+results dated 2026-10-31 and later, which come from the deployed site. Every row says which
+environment produced it.
 
 **Release/commit:** the commit containing this file on local branch `main` (`git log -1`). No
 remote repository exists yet.
 
-**Build URL and environment:** no deployment. Local production builds only:
+**Build URL and environment:** deployed at https://fe-03-56215.web.app (Firebase Hosting, project
+`fe-03-56215`) since 2026-10-25, used for the real-device results. Everything else comes from
+local production builds:
 - `dist/`: production build with no Firebase config (used for bundle sizes).
 - `dist-e2e/` and `dist-e2e-next/`: production builds in emulator mode (build IDs `e2e-a` and
   `e2e-b`), served by `tests/e2e/static-server.mjs` on `http://127.0.0.1:4173`, with gzip like
@@ -58,10 +61,22 @@ fields, `lastOpId` and receipt counts, not just the screen. The emulator sync te
 
 ## Real push delivery evidence
 
-**Blocked.** No Firebase project, VAPID key or opted-in device is available. Prepared: FID
-registration in Settings, owner-only device documents (rule-tested), the worker's background
-handler, and `scripts/send-test-push.mjs` (its argument guards were verified locally). A real send
-has not been attempted.
+**Pass on one Android phone.** Owner check on 2026-11-01. FieldLog was installed from the live
+site in Chrome on an Android 10 phone, with notifications enabled in Settings (its device document
+shows `enabled: true` in the Firestore console). Messages were sent from this PC with
+`scripts/send-test-push.mjs`, signed in through gcloud Application Default Credentials as the
+project owner. Firebase accepted every send and returned a message ID.
+
+| Test | Phone state | Observed |
+|---|---|---|
+| T43 | FieldLog open on screen | In-app banner "A job was updated."; Open job opened that job |
+| T44 | FieldLog swiped away from recent apps | A system notification from the service worker arrived |
+| T45 | Tap on that notification | FieldLog opened on that job |
+
+Finding: the first two sends had no `--job`. Firebase accepted them, but nothing appeared on the
+phone, because the app accepts only messages that name a valid job ID (`parseJobMessage` in
+`src/domain.ts`). The script now requires `--job`. Not run: denied permission
+(T46), other browsers, iOS.
 
 ## Lighthouse
 
@@ -90,8 +105,8 @@ What changed between runs:
   JavaScript runs. Firebase Messaging is now loaded only after sign-in.
 - **Test-server correction (2 → 3):** the local test server sent 780 kB of JavaScript uncompressed,
   which a real host would not. Under Lighthouse's simulated slow 4G link that starved the
-  stylesheet. Serving gzip, as Firebase Hosting does, removed that artifact. A run against the
-  deployed site is still **Blocked**.
+  stylesheet. Serving gzip, as Firebase Hosting does, removed that artifact. Lighthouse has not
+  been run against the deployed site yet.
 - **Interface redesign (3 → 4 → 5):** the first redesigned build scored 87–89 on mobile. Measured
   back to back on the same machine, the previous design scored 93 twice, so the drop was real. Two
   causes were fixed: the UI font's preload competed with the JavaScript, and the bundler had merged
@@ -172,7 +187,8 @@ the second: 874.6 kB / 276.3 kB and 61.9 kB / 14.2 kB, with 93.6 kB of fonts.
 - A value changed and changed back elsewhere looks unchanged to the field merge (documented).
 - The merge runs in the owner's client. The rules enforce structure and ownership, not the merge
   policy.
-- Not verified yet: real Firebase project, HTTPS deployment, installation, real push, Firefox and
-  Safari, OS-level disconnection, manual screen-reader pass.
+- Not verified yet: Firefox and Safari (including iOS install and push), OS-level disconnection
+  (airplane mode), a manual screen-reader pass. Install and push are verified on one Android
+  phone in Chrome only.
 - Two Firestore-emulator JVMs from early runs (before the fix in `scripts/firebase-emulators.mjs`)
   were still running when this was written; see `docs/progress.md`.

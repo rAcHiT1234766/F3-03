@@ -56,9 +56,9 @@ mode).
 | T40 | Storage failure | Pass | U "T40"; U `editor.test.ts` "T40" | Simulated `QuotaExceededError`: nothing stored, form input kept, clear message. A real quota exhaustion was not run |
 | T41 | Captive/server outage | Pass | B "T41" | Browser online, Firestore unreachable: "Cannot reach the server — retrying"; local work continues, then drains |
 | T42 | Installation | Pass (partial) | Owner check, 2026-10-31 (B `pwa.spec.ts` installability check also passes) | Android phone, Chrome, live site: installed, and opens from the home-screen icon in a standalone window (no address bar). Name, icon and start route not recorded separately; desktop Chrome/Edge install Not run |
-| T43 | Real push foreground | Blocked | — | Needs a Firebase project, VAPID key and an opted-in device |
-| T44 | Real push background | Blocked | — | As T43 |
-| T45 | Notification click | Pass (partial) | B `pwa.spec.ts` "T45 (page side only)" | Worker → page message opens only a validated job route; a real notification click is Blocked |
+| T43 | Real push foreground | Pass | Owner check, 2026-11-01 | Android phone, installed app (Chrome), live project: `send-test-push.mjs --job` while FieldLog was open. The in-app banner "A job was updated." appeared, and Open job opened that job. Two earlier sends without `--job` showed nothing (see `docs/evidence.md`) |
+| T44 | Real push background | Pass | Owner check, 2026-11-01 | Same phone with FieldLog swiped away from recent apps: a system notification from the service worker arrived |
+| T45 | Notification click | Pass | Owner check, 2026-11-01; B `pwa.spec.ts` "T45 (page side only)" | Tapping the T44 system notification opened FieldLog on that job. The browser suite still checks that the worker → page message opens only a validated job route |
 | T46 | Push denied/unsupported | Pass (partial) | B `session.spec.ts` "T46" | Unsupported/unconfigured: the app stays usable and says why. Denied permission needs a real config: Not run |
 | T47 | Sign-out with queue | Pass | B `session.spec.ts` "T47/T33" | Explicit choice; work kept and returned only to the same account, then synced |
 | T48 | Network flapping | Pass (partial) | U "T48" | Random transport and lost-response faults across 18 operations: each applied exactly once, queue drained. Real browser connectivity toggling was not run |

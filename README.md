@@ -133,6 +133,8 @@ Firebase Installation ID (FID) registration.
    npm run send-test-push -- --project <project-id> --uid <uid> --device <deviceId> --job <jobId>
    ```
    The device ID's first 8 characters are shown in Settings; the full ID is in the device document.
+   `--job` is required (the app ignores messages without a valid job ID): use a document ID from
+   `users/{uid}/jobs`, whose first 6 characters are the job's Ref.
    The script prints the FCM message ID only, never the registration ID or credentials.
 3. With the app open you should see an in-app banner. With it in the background, one system
    notification titled "FieldLog update available". Clicking it opens the job.
