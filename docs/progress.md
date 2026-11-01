@@ -3,7 +3,7 @@
 Entries follow the format in spec §31.1. Results are what was actually observed; anything not
 executed is marked not run or blocked. Newest first.
 
-## 2026-11-01 — Real push on the phone
+## 2026-11-01 — Real push and offline use on the phone
 
 **Date and commit:** 2026-11-01, after `9a046e2`. Code change: `scripts/send-test-push.mjs` now
 requires a valid `--job` (README updated).
@@ -12,12 +12,16 @@ requires a valid `--job` (README updated).
 enabled notifications, and test messages were sent from this PC with `scripts/send-test-push.mjs`
 (gcloud Application Default Credentials). T43 (banner while open; Open job works), T44 (system
 notification while closed) and T45 (tapping it opens the job) pass. The first two sends had no
-`--job`: Firebase accepted them, but the app drops messages without a valid job ID, so nothing
-appeared, so the script now refuses to send without a job ID.
+`--job`: Firebase accepted them, but the app drops messages without a valid job ID and nothing
+appeared, so the script now refuses to send without one.
+
+Airplane-mode test on the same phone: an edit and a new job saved offline survived closing and
+reopening the app offline, and both synced after reconnecting (seen on the live site on the PC).
+The home-screen name is FieldLog and the app opens on the Jobs list, so T42 is now Pass.
 
 **Next three tasks:**
-1. An airplane-mode edit on the phone that syncs afterwards.
-2. GitHub repository and the Google Drive upload (`docs/submission-index.md`).
+1. GitHub repository and the Google Drive upload (`docs/submission-index.md`).
+2. Backup demo video and the intern's own reflection.
 3. Manual screen-reader and Windows contrast-theme check of the new screens.
 
 ## 2026-10-31 — Real-device install

@@ -48,8 +48,13 @@ Scenario status T01–T48: `docs/test-matrix.md`.
   context. The app's files then come from the worker's precache and its data from IndexedDB.
 - **Server unreachable while "online":** Playwright `context.route` refuses requests to the
   Firestore emulator while the app origin stays reachable (T41, T38, T47).
-- **Not run:** OS-level network disconnection, and checking whether DevTools-style offline also
-  blocks worker-originated requests (spec §21.1 warning). The worker makes no network requests for
+- **Real device (owner check, 2026-11-01):** airplane mode with Wi-Fi off on the installed Android
+  app. The status showed "Offline — you can keep working"; a status change and a new job were
+  saved, Sync center showed 2 changes waiting, and both survived closing and reopening the app
+  offline. After airplane mode was turned off, Sync center showed no changes waiting and "Up to
+  date", and both changes appeared on the live site in Chrome on the PC.
+- **Not run:** checking whether DevTools-style offline also blocks worker-originated requests
+  (spec §21.1 warning). The worker makes no network requests for
   app data, so offline behavior does not depend on that.
 
 ## Canonical receipt and revision verification
@@ -187,8 +192,7 @@ the second: 874.6 kB / 276.3 kB and 61.9 kB / 14.2 kB, with 93.6 kB of fonts.
 - A value changed and changed back elsewhere looks unchanged to the field merge (documented).
 - The merge runs in the owner's client. The rules enforce structure and ownership, not the merge
   policy.
-- Not verified yet: Firefox and Safari (including iOS install and push), OS-level disconnection
-  (airplane mode), a manual screen-reader pass. Install and push are verified on one Android
-  phone in Chrome only.
+- Not verified yet: Firefox and Safari (including iOS install and push), a manual screen-reader
+  pass. Install, push and airplane-mode use are verified on one Android phone in Chrome only.
 - Two Firestore-emulator JVMs from early runs (before the fix in `scripts/firebase-emulators.mjs`)
   were still running when this was written; see `docs/progress.md`.

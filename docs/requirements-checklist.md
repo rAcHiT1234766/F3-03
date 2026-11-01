@@ -11,7 +11,7 @@ completed.
 | 1 | Vue 3 + Vite app builds reproducibly from the lockfile | Done (local) | `package-lock.json`; `npm run check`. A clean-checkout `npm ci` rebuild in CI is configured but not run |
 | 2 | Dexie stores jobs and durable sync commands | Done | `src/db.ts`, `src/jobs.ts`; T01, T03 |
 | 3 | Create/edit/delete and queue insertion are atomic | Done | T01, T02 |
-| 4 | Prepared app and data usable after offline reload/reopen | Done | T35, T03, T06 (Chromium) |
+| 4 | Prepared app and data usable after offline reload/reopen | Done | T35, T03, T06 (Chromium); airplane mode on the installed Android app, 2026-11-01 |
 | 5 | Workbox caches required routes/assets, not account APIs | Done | T37; `src/sw.ts` (precache + navigation only) |
 | 6 | Manifest and installation flow work on a recorded target | Done (Android Chrome) | Manifest and installability check pass; installed and launched standalone on an Android phone in Chrome from the live site (T42, 2026-10-31) |
 | 7 | Outbox delivers actual changes to Firebase | Done | T07, S suite (emulator). Live project, 2026-11-01: the phone's last upload (11:05 in its Sync center) matches the job's `updatedAt` and revision 6 in the Firestore console |
