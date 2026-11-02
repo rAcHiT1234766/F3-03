@@ -8,7 +8,7 @@ completed.
 
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
-| 1 | Vue 3 + Vite app builds reproducibly from the lockfile | Done (local) | `package-lock.json`; `npm run check`. A clean-checkout `npm ci` rebuild in CI is configured but not run |
+| 1 | Vue 3 + Vite app builds reproducibly from the lockfile | Done | `package-lock.json`; `npm run check`. Clean-checkout `npm ci` rebuild in GitHub Actions passed on 2026-11-01 (all three CI jobs, https://github.com/rAcHiT1234766/F3-03/actions/runs/41281231630) |
 | 2 | Dexie stores jobs and durable sync commands | Done | `src/db.ts`, `src/jobs.ts`; T01, T03 |
 | 3 | Create/edit/delete and queue insertion are atomic | Done | T01, T02 |
 | 4 | Prepared app and data usable after offline reload/reopen | Done | T35, T03, T06 (Chromium); airplane mode on the installed Android app, 2026-11-01 |
@@ -30,7 +30,7 @@ completed.
 | 20 | Required tests have actual results, blocked/not-run identified | Done | `docs/test-matrix.md` |
 | 21 | Current Lighthouse plus an explicit PWA checklist | Done (local) | `docs/evidence.md`, `docs/pwa-checklist.md`; deployed run Blocked |
 | 22 | Measurements identify device, data, method, environment, commit | Done (emulator) | `docs/evidence.md`, `docs/evidence/measurements.json` |
-| 23 | Demo, GitHub, architecture, protocol/data docs, setup | Partial | Docs and setup done (`README.md`, `docs/`). Demo URL live; GitHub repository not created yet |
+| 23 | Demo, GitHub, architecture, protocol/data docs, setup | Partial | Docs and setup done (`README.md`, `docs/`). Demo URL live; source on GitHub (https://github.com/rAcHiT1234766/F3-03) |
 | 24 | Ten-minute presentation and authentic reflection | Partial | Outline and notes: `docs/presentation.md`. Reflection needs the intern's own answers (`docs/reflection.md`) |
 | 25 | Submission folder and reviewer access verified | Blocked | Index prepared: `docs/submission-index.md` |
 
@@ -39,7 +39,7 @@ completed.
 | Deliverable | Status | Location |
 |---|---|---|
 | Working demo (URL or recording) | Partial | Live at https://fe-03-56215.web.app; the backup screen recording is not made yet |
-| GitHub repository | Blocked | Local Git history only; no remote was authorized |
+| GitHub repository | Done | https://github.com/rAcHiT1234766/F3-03 (public), `main` pushed on 2026-11-01 |
 | Architecture | Done | `docs/architecture.md` |
 | Data/API documentation | Done | `docs/sync-protocol.md` |
 | Test results | Done (local) | `docs/test-matrix.md`, `docs/evidence.md` |

@@ -4,8 +4,10 @@ Format from spec §25.3. Values are what was observed on 2026-10-24, except the 
 results dated 2026-10-31 and later, which come from the deployed site. Every row says which
 environment produced it.
 
-**Release/commit:** the commit containing this file on local branch `main` (`git log -1`). No
-remote repository exists yet.
+**Release/commit:** the commit containing this file on branch `main` (`git log -1`), pushed to
+https://github.com/rAcHiT1234766/F3-03. The first GitHub Actions run (2026-11-01, on the source
+now in commit `c876731`) passed all three jobs on a clean checkout: checks (lint, typecheck, unit
+tests, build), emulator (rules and sync suites) and e2e (Playwright).
 
 **Build URL and environment:** deployed at https://fe-03-56215.web.app (Firebase Hosting, project
 `fe-03-56215`) since 2026-10-25, used for the real-device results. Everything else comes from

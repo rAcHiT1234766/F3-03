@@ -9,6 +9,8 @@ allow.
 > Assignment FE-03 (Frontend Development, project 2 of 2). The full specification is
 > [`FE-03-Codex-Project-Workflow.md`](FE-03-Codex-Project-Workflow.md). Progress, decisions and
 > evidence are in [`docs/`](docs/).
+>
+> Live app: https://fe-03-56215.web.app · Source: https://github.com/rAcHiT1234766/F3-03
 
 ## What it promises, and what it does not
 

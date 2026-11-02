@@ -5,7 +5,7 @@ executed is marked not run or blocked. Newest first.
 
 ## 2026-11-01 — Real push and offline use on the phone
 
-**Date and commit:** 2026-11-01, after `9a046e2`. Code change: `scripts/send-test-push.mjs` now
+**Date and commit:** 2026-11-01, after `b8db299`. Code change: `scripts/send-test-push.mjs` now
 requires a valid `--job` (README updated).
 
 **Browser/device checks performed:** on the installed Android app (Chrome, live project) the owner
@@ -19,14 +19,19 @@ Airplane-mode test on the same phone: an edit and a new job saved offline surviv
 reopening the app offline, and both synced after reconnecting (seen on the live site on the PC).
 The home-screen name is FieldLog and the app opens on the Jobs list, so T42 is now Pass.
 
+GitHub: `main` pushed to https://github.com/rAcHiT1234766/F3-03 (public). The first CI run, on the source now in
+`c876731`, passed all three jobs (checks, emulator, e2e) from a clean `npm ci`: https://github.com/rAcHiT1234766/F3-03/actions/runs/41281231630.
+On 2026-11-02 the commit messages were reworded, so every commit ID changed (the source in each
+commit is unchanged); the IDs in these docs are the new ones.
+
 **Next three tasks:**
-1. GitHub repository and the Google Drive upload (`docs/submission-index.md`).
-2. Backup demo video and the intern's own reflection.
+1. Backup demo video and the intern's own reflection.
+2. Google Drive upload and reviewer access (`docs/submission-index.md`).
 3. Manual screen-reader and Windows contrast-theme check of the new screens.
 
 ## 2026-10-31 — Real-device install
 
-**Date and commit:** 2026-10-31, after `7fcc65a`. Checkpoint 4 below was committed as `7fcc65a`
+**Date and commit:** 2026-10-31, after `c714254`. Checkpoint 4 below was committed as `c714254`
 and deployed; the live site serves the same asset files as the local `dist/`.
 
 **Browser/device checks performed:** the owner installed FieldLog from
@@ -41,7 +46,7 @@ route separately, offline use on the phone, push (T43–T45).
 
 ## 2026-10-25 — Second interface redesign (checkpoint 4)
 
-**Date and commit:** 2026-10-25, not committed yet (working tree on `main`, after `29182a3`).
+**Date and commit:** 2026-10-25, not committed yet (working tree on `main`, after `7f6a981`).
 
 **Current phase:** interface work requested by the owner after checkpoint 3, who found the first
 redesign generic ("looks AI-made"), the sign-in screen most of all. No sync, storage, rules or
@@ -123,7 +128,7 @@ files in the project root are not part of the project.
 
 ## 2026-10-24 — Interface redesign (checkpoint 3)
 
-**Date and commit:** 2026-10-24, fourth commit on `main` (follows `b1f4937`).
+**Date and commit:** 2026-10-24, fourth commit on `main` (follows `c1c3242`).
 
 **Current phase:** interface and accessibility work requested by the owner, after Phase 9. No
 sync, storage, rules or push behavior changed.
@@ -191,7 +196,7 @@ delay the first one).
 
 ## 2026-10-24 — Phase 9, verification and documentation (checkpoint 2)
 
-**Date and commit:** 2026-10-24, second commit on `main` (follows `71ea90f`).
+**Date and commit:** 2026-10-24, second commit on `main` (follows `7685a68`).
 
 **Current phase:** everything that can be done locally for Phases 0–9 and the verification and
 documentation work (§20–§26) is done. The remaining work needs external access (see below).
