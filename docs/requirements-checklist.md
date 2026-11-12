@@ -30,15 +30,15 @@ completed.
 | 20 | Required tests have actual results, blocked/not-run identified | Done | `docs/test-matrix.md` |
 | 21 | Current Lighthouse plus an explicit PWA checklist | Done (local) | `docs/evidence.md`, `docs/pwa-checklist.md`; deployed run Blocked |
 | 22 | Measurements identify device, data, method, environment, commit | Done (emulator) | `docs/evidence.md`, `docs/evidence/measurements.json` |
-| 23 | Demo, GitHub, architecture, protocol/data docs, setup | Partial | Docs and setup done (`README.md`, `docs/`). Demo URL live; source on GitHub (https://github.com/rAcHiT1234766/F3-03) |
-| 24 | Ten-minute presentation and authentic reflection | Partial | Outline and notes: `docs/presentation.md`. Reflection needs the intern's own answers (`docs/reflection.md`) |
-| 25 | Submission folder and reviewer access verified | Blocked | Index prepared: `docs/submission-index.md` |
+| 23 | Demo, GitHub, architecture, protocol/data docs, setup | Done | Docs and setup (`README.md`, `docs/`). Live demo at https://fe-03-56215.web.app and a screen recording made on 2026-11-11 (Drive `01-Demo`); source on GitHub (https://github.com/rAcHiT1234766/F3-03) |
+| 24 | Ten-minute presentation and authentic reflection | Partial | 14-slide deck with speaker notes and a recorded ten-minute talk (Drive `05-Presentation`). Reflection: the intern's own answers, not finished yet (Drive `06-Reflection`) |
+| 25 | Submission folder and reviewer access verified | Not done yet | Google Drive folders `00-Start-Here` to `06-Reflection`; the submission material is kept outside this repository |
 
 ## Deliverables (§25)
 
 | Deliverable | Status | Location |
 |---|---|---|
-| Working demo (URL or recording) | Partial | Live at https://fe-03-56215.web.app; the backup screen recording is not made yet |
+| Working demo (URL or recording) | Done | Live at https://fe-03-56215.web.app; screen recording of the talk and demo made on 2026-11-11 (Drive `01-Demo`) |
 | GitHub repository | Done | https://github.com/rAcHiT1234766/F3-03 (public), `main` pushed on 2026-11-01 |
 | Architecture | Done | `docs/architecture.md` |
 | Data/API documentation | Done | `docs/sync-protocol.md` |
@@ -46,5 +46,5 @@ completed.
 | Measurements | Done (emulator) | `docs/evidence.md` |
 | PWA evidence | Partial | `docs/pwa-checklist.md`, Lighthouse reports; install done on Android Chrome (T42); update on the deployed origin Not run |
 | Push evidence | Done (Android Chrome) | `docs/evidence.md` § Real push |
-| Presentation | Draft | `docs/presentation.md` |
-| Reflection | Template only | `docs/reflection.md` |
+| Presentation | Done | 14-slide deck with speaker notes, and the talk script (Drive `05-Presentation`) |
+| Reflection | In progress | The intern's own answers (Drive `06-Reflection`) |

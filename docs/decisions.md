@@ -1,7 +1,7 @@
 # Decisions
 
 Decisions made while implementing FieldLog, with the reason for each. Dates are when the decision
-was recorded. The specification is `FE-03-Codex-Project-Workflow.md`.
+was recorded. The specification is the FE-03 assignment brief, provided separately.
 
 ## Environment and tooling (2026-10-24)
 

@@ -3,6 +3,24 @@
 Entries follow the format in spec §31.1. Results are what was actually observed; anything not
 executed is marked not run or blocked. Newest first.
 
+## 2026-11-12 — Repository cleanup before submission
+
+**Date and commit:** 2026-11-12, after `971ae87`. Documentation only; no code change.
+
+The ten-minute talk with the live demo was recorded on 2026-11-11 (laptop and the Android phone)
+and joined into one video for the Drive submission.
+
+The talk script, the demo recording script, the reflection, the Drive submission index and the
+assignment brief were moved out of this repository. They are submission material for the Google
+Drive folder, not part of the app. Older entries below still name those files as they were then.
+Section numbers ("spec §…") refer to the assignment brief, which is provided separately.
+
+**Next three tasks:**
+1. The intern's own reflection.
+2. Google Drive upload, with the final commit ID in the submission index, and reviewer access
+   checked from another account.
+3. Manual screen-reader and Windows contrast-theme check of the new screens.
+
 ## 2026-11-01 — Real push and offline use on the phone
 
 **Date and commit:** 2026-11-01, after `b8db299`. Code change: `scripts/send-test-push.mjs` now

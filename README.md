@@ -6,9 +6,9 @@ create, edit and delete jobs, and record progress without a connection. Changes 
 device first and synchronize with the same account's Firebase data when connectivity and sign-in
 allow.
 
-> Assignment FE-03 (Frontend Development, project 2 of 2). The full specification is
-> [`FE-03-Codex-Project-Workflow.md`](FE-03-Codex-Project-Workflow.md). Progress, decisions and
-> evidence are in [`docs/`](docs/).
+> Assignment FE-03 (Frontend Development, project 2 of 2). Section numbers such as "spec §25" refer
+> to the assignment brief, which is provided separately. Progress, decisions and evidence are in
+> [`docs/`](docs/).
 >
 > Live app: https://fe-03-56215.web.app · Source: https://github.com/rAcHiT1234766/F3-03
 
