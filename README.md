@@ -12,6 +12,23 @@ allow.
 >
 > Live app: https://fe-03-56215.web.app · Source: https://github.com/rAcHiT1234766/F3-03
 
+## Screenshots
+
+Fictional jobs, local emulators, production build. "Saved on this device" marks a job created
+while the browser was offline; the Sync center lists it until the connection returns.
+
+| Jobs list, offline with one change waiting | Sync center while offline |
+|---|---|
+| ![Jobs list with five jobs; one is marked Saved on this device](docs/images/jobs-list-offline.png) | ![Sync center saying Offline, you can keep working, with one change waiting](docs/images/sync-center-offline.png) |
+
+| Job sheet | Editing a job |
+|---|---|
+| ![Job sheet for Replace boiler pressure valve](docs/images/job-detail.png) | ![Edit job form with status, priority and due date](docs/images/job-editor.png) |
+
+| Dark theme | Phone, with bottom tab bar | Sign-in |
+|---|---|---|
+| ![Jobs list in the dark theme](docs/images/jobs-dark.png) | ![Jobs list on a phone-sized screen](docs/images/phone-jobs.png) | ![Sign-in screen](docs/images/sign-in.png) |
+
 ## What it promises, and what it does not
 
 - **Save means saved on this device.** Save succeeds only when the IndexedDB transaction commits,
